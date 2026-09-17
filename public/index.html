@@ -562,9 +562,6 @@
         </div>
         <ul class="space-y-4 mb-8 flex-grow text-gray-600 font-medium">
           <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Mais de 40 cartas de personagens</span></li>
-          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Regras do jogo e lista de personagens</span></li>
-          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Arquivo pronto para imprimir em A4</span></li>
-          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Acesso digital para reimprimir quando quiser</span></li>
           <li class="flex items-start"><i data-lucide="plus-circle" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-medical-900 font-bold">Materiais extras a partir de R$ 6,90 no checkout</span></li>
         </ul>
         <button type="button" data-plano="basico"
@@ -574,7 +571,11 @@
       </div>
 
       <!-- Kit Premium -->
-      <div class="w-full md:w-1/2 lg:w-[500px] bg-white rounded-[2rem] shadow-2xl p-8 flex flex-col text-gray-800 border-4 border-vibrant-yellow relative transform transition hover:-translate-y-3 md:-mt-4 md:mb-4">
+      <!-- order-first: no celular o Premium vem antes do Básico. Empilhado, quem
+           abre os planos cai direto na oferta principal em vez de rolar uma tela
+           inteira de Básico. No desktop os dois ficam lado a lado e a ordem
+           natural volta (md:order-none). -->
+      <div class="order-first md:order-none w-full md:w-1/2 lg:w-[500px] bg-white rounded-[2rem] shadow-2xl p-8 flex flex-col text-gray-800 border-4 border-vibrant-yellow relative transform transition hover:-translate-y-3 md:-mt-4 md:mb-4">
         <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-vibrant-yellow text-medical-900 text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-lg whitespace-nowrap">
           ⭐ Mais escolhido
         </div>
