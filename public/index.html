@@ -1255,7 +1255,11 @@ function initToasts() {
       if (!resposta.ok) {
         // detalhes[] vem da validação dos campos; detalhes (string) vem da operadora.
         const campos = Array.isArray(dados.detalhes) ? dados.detalhes.join(' ') : '';
-        mostrarErro(campos || dados.detalhes || dados.erro || 'Não foi possível gerar o PIX.');
+        const msg = campos || dados.detalhes || dados.erro || 'Não foi possível gerar o PIX.';
+        // O código vai junto: sem ele, "checkout indisponível" não diz se o
+        // problema é credencial, plano ou a operadora recusando.
+        mostrarErro(dados.codigo && !campos ? `${msg} (${dados.codigo})` : msg);
+        console.error('[checkout] falhou:', resposta.status, dados);
         return;
       }
       exibirPix(dados);

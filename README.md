@@ -27,6 +27,26 @@ Na Vercel, em **Settings > Environment Variables**, defina:
 | `ZUCKPAY_CLIENT_ID` | Painel ZuckPay > Desenvolvedores > Credenciais API |
 | `ZUCKPAY_CLIENT_SECRET` | idem |
 | `ZUCKPAY_WEBHOOK_SECRET` | Painel ZuckPay > card *Webhook Secret* (opcional, recomendado) |
+| `DIAGNOSTICO_SECRET` | Você inventa. Libera o `/api/diagnostico` (opcional) |
+
+**Variável nova só vale em deploy novo.** Depois de adicionar ou mudar
+qualquer uma delas, rode um *Redeploy* — o deploy que já estava no ar continua
+com os valores antigos.
+
+Marque as três para o ambiente **Production**. Variável marcada só como
+Preview ou Development não chega no site publicado.
+
+### Quando o PIX não gera
+
+Com `DIAGNOSTICO_SECRET` definido, abra:
+
+```
+https://SEU-DOMINIO/api/diagnostico?token=SEU_SEGREDO
+```
+
+Ele responde se cada credencial existe, se a ZuckPay as aceita, e se alguma
+veio com espaço colado (o erro mais comum ao copiar do painel). Nunca mostra o
+valor de nenhuma. Sem a variável definida, o endereço responde 404.
 
 O `webhook_secret` é **diferente** do client secret. Com ele definido, o
 `api/webhook.js` recusa qualquer postback sem assinatura válida.
