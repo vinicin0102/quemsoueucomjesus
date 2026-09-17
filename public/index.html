@@ -16,6 +16,32 @@
 <link rel="apple-touch-icon" href="img/produto-principal.png">
 <meta name="theme-color" content="#0E2E63">
 
+<!-- ============ META PIXEL ============
+     Cole o ID do seu Pixel abaixo (Gerenciador de Eventos > Fontes de dados).
+     Deixe vazio e nada é carregado — a página continua funcionando igual.
+
+     O MESMO id precisa ir na variável META_PIXEL_ID da Vercel: é ela que o
+     servidor usa para mandar o Purchase pela Conversions API quando o PIX cai.
+     Os dois lados usam o mesmo event_id, então a Meta não conta em dobro. -->
+<script>
+  window.META_PIXEL_ID = '';
+
+  (function (id) {
+    if (!id) return;
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', id);
+    fbq('track', 'PageView');
+    fbq('track', 'ViewContent', {
+      content_name: 'Quem Sou Eu? Personagens Bíblicos',
+      content_category: 'Material bíblico infantil'
+    });
+  })(window.META_PIXEL_ID);
+</script>
+
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1086,6 +1112,22 @@ function initToasts() {
   let baseAtual = 0;       // preço do plano, em centavos
   let bumpsAtuais = [];    // bumps disponíveis para o plano
 
+  /* ---------- rastreamento ----------
+   * Nenhum dado pessoal vai pelo navegador: só o evento, o valor e os ids.
+   * Nome, e-mail e telefone vão apenas pela Conversions API, no servidor, e
+   * lá são enviados com hash SHA-256 (lib/meta.js).
+   *
+   * O eventID fixo no Purchase é o mesmo que o webhook usa, para a Meta
+   * contar a venda uma vez só quando os dois chegarem. */
+  function rastrear(evento, dados = {}, eventId = null) {
+    if (typeof fbq !== 'function') return;  // sem pixel, ou bloqueador de anúncio
+    try {
+      fbq('track', evento, dados, eventId ? { eventID: eventId } : undefined);
+    } catch (err) {
+      console.debug('[pixel] falhou:', err.message);
+    }
+  }
+
   /* ---------- atribuição (UTMs, Meta, Google, TikTok) ---------- */
   function lerCookie(nome) {
     const achado = document.cookie.split('; ').find(c => c.indexOf(nome + '=') === 0);
@@ -1168,7 +1210,18 @@ function initToasts() {
       `).join('');
 
       lista.querySelectorAll('.bump-check').forEach(c =>
-        c.addEventListener('change', atualizarTotal)
+        c.addEventListener('change', () => {
+          atualizarTotal();
+          if (!c.checked) return;
+          const b = bumpsAtuais.find(x => x.id === c.value);
+          rastrear('AddToCart', {
+            content_name: b?.titulo,
+            content_ids: [c.value],
+            content_type: 'product',
+            value: (b?.amount || 0) / 100,
+            currency: 'BRL'
+          });
+        })
       );
 
       wrap.classList.remove('hidden');
@@ -1201,7 +1254,13 @@ function initToasts() {
     lucide.createIcons();
 
     carregarBumps(plano);
-    if (window.fbq) fbq('track', 'InitiateCheckout', { content_name: PLANOS[plano].nome });
+    rastrear('InitiateCheckout', {
+      content_name: PLANOS[plano].nome,
+      content_ids: [plano],
+      content_type: 'product',
+      value: PLANOS[plano].centavos / 100,
+      currency: 'BRL'
+    });
   }
 
   function fechar() {
@@ -1322,7 +1381,14 @@ function initToasts() {
         document.getElementById('ok-email').textContent = document.getElementById('cf-email').value;
         mostrarEtapa('ok');
         lucide.createIcons();
-        if (window.fbq) fbq('track', 'Purchase', { value: dados.valor / 100, currency: 'BRL', content_name: dados.plano });
+        // purchase_<hash> é exatamente o event_id que o webhook envia.
+        rastrear('Purchase', {
+          value: dados.valor / 100,
+          currency: 'BRL',
+          content_type: 'product',
+          content_ids: [dados.plano, ...(dados.bumps || [])],
+          num_items: 1 + (dados.bumps || []).length
+        }, `purchase_${dados.hash}`);
         return;
       }
       // Recusado, expirado ou estornado: não adianta continuar.

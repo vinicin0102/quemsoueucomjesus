@@ -28,6 +28,8 @@ Na Vercel, em **Settings > Environment Variables**, defina:
 | `ZUCKPAY_CLIENT_SECRET` | idem |
 | `ZUCKPAY_WEBHOOK_SECRET` | Painel ZuckPay > card *Webhook Secret* (opcional, recomendado) |
 | `DIAGNOSTICO_SECRET` | Você inventa. Libera o `/api/diagnostico` (opcional) |
+| `META_PIXEL_ID` | Gerenciador de Eventos > Fontes de dados (para rastrear vendas) |
+| `META_CAPI_TOKEN` | Gerenciador de Eventos > Configurações > Conversions API |
 
 **Variável nova só vale em deploy novo.** Depois de adicionar ou mudar
 qualquer uma delas, rode um *Redeploy* — o deploy que já estava no ar continua
@@ -92,6 +94,39 @@ O que foi comprado fica codificado no próprio identificador do pedido
 (`qsj-<plano>-<extras>-<nonce>`, ver `lib/pedido.js`), então o webhook sabe o
 que entregar sem banco de dados.
 
+## Rastreamento (Meta)
+
+Está montado, mas **desligado até você preencher dois lugares com o mesmo
+Pixel ID**:
+
+1. `public/index.html`, linha `window.META_PIXEL_ID = '';` — é o pixel do
+   navegador. Vazio, nada é carregado e a página funciona igual.
+2. As variáveis `META_PIXEL_ID` e `META_CAPI_TOKEN` na Vercel — são a
+   Conversions API, que roda no servidor.
+
+**Os dois são necessários, e não é redundância.** Com PIX o comprador sai para
+o app do banco e quase nunca volta para a página, então o Purchase do navegador
+se perde. Quem registra a venda de verdade é o webhook, server-side, que a
+ZuckPay chama quando o pagamento cai.
+
+Os dois lados mandam o mesmo `event_id` (`purchase_<id do pedido>`), então se
+os dois chegarem a Meta conta **uma venda só**.
+
+| Evento | Onde dispara |
+|---|---|
+| `PageView`, `ViewContent` | navegador, ao abrir a página |
+| `InitiateCheckout` | navegador, ao abrir o modal |
+| `AddToCart` | navegador, ao marcar um material extra |
+| `PixGerado` (custom) | **servidor**, quando o QR Code é criado — é intenção, não venda |
+| `Purchase` | **servidor** (webhook) + navegador, deduplicados |
+
+Nenhum dado pessoal sai pelo navegador. Nome, e-mail e telefone vão só pela
+Conversions API e com hash SHA-256, como a Meta exige. **O CPF nunca é
+enviado.**
+
+Para conferir em tempo real, preencha `META_TEST_EVENT_CODE` com o código da
+aba *Eventos de teste* do Gerenciador de Eventos.
+
 ## Pendências
 
 - **Entrega por e-mail** — `entregarProduto()` no `api/webhook.js` hoje só
@@ -103,6 +138,5 @@ que entregar sem banco de dados.
   `public/img/avaliacao-0*.png` e ajuste o título da seção.
 - **Cronômetro de 15 min** — herdado da Vet Fácil. Se não houver prazo real,
   remova a barra sticky no topo do `<body>`.
-- **Meta Pixel** — a página não tem pixel. Se for anunciar, vale portar o
-  `lib/meta.js` da Vet Fácil para disparar o Purchase pelo webhook (com PIX o
-  comprador costuma não voltar para a aba).
+- **Ligar o pixel** — o rastreamento está montado mas desligado. Ver
+  *Rastreamento (Meta)*, acima: são dois lugares para preencher.

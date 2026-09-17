@@ -16,6 +16,7 @@ const { criarCobranca } = require('../lib/zuckpay');
 const { montarPedido } = require('../lib/planos');
 const { novoId } = require('../lib/pedido');
 const { validarCliente } = require('../lib/validacao');
+const { enviarEvento } = require('../lib/meta');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -66,6 +67,22 @@ module.exports = async function handler(req, res) {
         codigo: 'SCHEMA_PIX_INESPERADO'
       });
     }
+
+    // Evento de intenção, server-side. NÃO é Purchase: a pessoa ainda pode não pagar.
+    enviarEvento({
+      nome: 'PixGerado',
+      transactionHash: externalId,
+      valor: pedido.amount,
+      contentIds: [String(body.plano), ...bumps],
+      cliente: validacao.customer,
+      extras: {
+        fbp: body.tracking?.fbp,
+        fbc: body.tracking?.fbc,
+        ip: (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || undefined,
+        userAgent: req.headers['user-agent']
+      },
+      urlOrigem: `${proto}://${host}/`
+    }).catch(() => { /* rastreamento nunca derruba o checkout */ });
 
     return res.status(201).json({
       hash: externalId,

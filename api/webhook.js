@@ -5,14 +5,19 @@
  *    (HMAC sobre o corpo cru, janela de 5 minutos). Sem ele, segue sem.
  * 2. Assinado ou não, NÃO confia no status do corpo: reconsulta a cobrança
  *    na ZuckPay e usa o que a API devolve. O corpo serve só como gatilho.
- * 3. Pago: dispara a entrega do material.
+ * 3. Pago: dispara o Purchase na Meta (server-side) e a entrega.
+ *
+ * É o webhook que registra a venda no Facebook: com PIX o comprador paga no
+ * app do banco e muitas vezes não volta para a página.
  *
  * É o webhook que garante a entrega: com PIX o comprador paga no app do banco
  * e muitas vezes não volta para a página.
  */
 
-const { consultarTransacao, verificarAssinatura } = require('../lib/zuckpay');
+const { consultarTransacao, verificarAssinatura, semMascara } = require('../lib/zuckpay');
+const { montarPedido } = require('../lib/planos');
 const { lerId } = require('../lib/pedido');
+const { enviarEvento } = require('../lib/meta');
 
 /** Corpo cru, necessário para o HMAC. Nunca reserializar o JSON parseado. */
 async function lerCorpoCru(req) {
@@ -23,6 +28,24 @@ async function lerCorpoCru(req) {
     if (partes.length) return Buffer.concat(partes).toString('utf8');
   }
   return typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
+}
+
+/** Prefere o comprador do postback (pode vir sem máscara) ao da consulta. */
+function clienteDe(b, t) {
+  const d = b?.data ?? b ?? {};
+  const c = d.customer ?? d.cliente ?? d.payer ?? {};
+  return {
+    name: semMascara(c.name ?? c.nome ?? d.nome) ?? t.customer.name,
+    email: semMascara(c.email ?? d.email) ?? t.customer.email,
+    phone_number: semMascara(c.phone ?? c.telefone ?? d.telefone) ?? t.customer.phone_number
+  };
+}
+
+/** Rede de segurança: se a ZuckPay não devolver o valor, soma pelo catálogo. */
+function valorDoPedido(pedido) {
+  if (!pedido) return null;
+  const r = montarPedido(pedido.plano, pedido.bumps);
+  return r.ok ? r.amount : null;
 }
 
 function idDoCorpo(b) {
@@ -60,7 +83,21 @@ module.exports = async function handler(req, res) {
     console.log(`[webhook] ${externalId} -> ${t.statusOriginal} (${t.status})`);
 
     if (t.status === 'paid') {
-      await entregarProduto(externalId, lerId(externalId), t);
+      const pedido = lerId(externalId);
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+
+      // Mesmo event_id do navegador (purchase_<hash>): a Meta conta uma vez só.
+      await enviarEvento({
+        nome: 'Purchase',
+        transactionHash: externalId,
+        valor: t.amount ?? valorDoPedido(pedido),
+        contentIds: pedido ? [pedido.plano, ...pedido.bumps] : [],
+        cliente: clienteDe(body, t),
+        urlOrigem: `${proto}://${host}/`
+      });
+
+      await entregarProduto(externalId, pedido, t);
     }
 
     // 200 rápido para a ZuckPay parar de reenviar.
