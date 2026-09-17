@@ -10,7 +10,18 @@
      oferta desde o começo. Precisa rodar antes de o navegador restaurar, por
      isso está aqui em cima e não junto do resto do script. -->
 <script>
+  // O navegador guarda onde a pessoa parou e devolve ela para la na proxima
+  // visita. Numa pagina de vendas isso e o contrario do que se quer.
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+  // Endereco com ancora (.../#planos) faz o navegador pular para a seção.
+  // Basta ter clicado num CTA uma vez em alguma versao antiga para esse
+  // endereco ficar no historico, e a partir dali toda entrada cai no meio.
+  // Limpamos aqui, no <head>: neste ponto a seção ainda nem foi lida, entao
+  // o pulo nunca chega a acontecer.
+  if (location.hash) {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quem Sou Eu? Personagens Bíblicos | Jogo pronto para a aula infantil</title>
@@ -1020,13 +1031,26 @@ function ativarRolagemLimpa() {
   });
 }
 
-/* Sem âncora no endereço, entrar na página é começar do topo. Com âncora
- * (/#planos), respeitamos o destino: foi alguém pedindo aquela seção. */
+/* Entrar na página é começar no topo. Sem exceção: é página de vendas, quem
+ * chega precisa ver a oferta desde o começo.
+ *
+ * O guarda existe porque a página é alta e demora a montar: se a pessoa já
+ * começou a rolar por conta própria, não puxamos ela de volta. */
+let pessoaRolou = false;
+['wheel', 'touchmove', 'keydown'].forEach(evento =>
+  addEventListener(evento, () => { pessoaRolou = true; }, { passive: true, once: true })
+);
+
 function comecarNoTopo() {
-  if (location.hash) return;
-  window.scrollTo(0, 0);
+  if (!pessoaRolou) window.scrollTo(0, 0);
 }
-addEventListener('pageshow', comecarNoTopo);   // cobre o voltar do navegador
+
+// Em vários momentos porque cada navegador rola num instante diferente:
+// ao trocar de página, ao terminar de carregar, e ao voltar pelo histórico.
+document.addEventListener('DOMContentLoaded', comecarNoTopo);
+addEventListener('pageshow', comecarNoTopo);
+setTimeout(comecarNoTopo, 0);
+setTimeout(comecarNoTopo, 300);
 
 window.addEventListener('load', () => {
   comecarNoTopo();
