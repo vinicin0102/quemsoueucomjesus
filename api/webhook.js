@@ -82,6 +82,6 @@ module.exports = async function handler(req, res) {
  */
 async function entregarProduto(externalId, pedido, transacao) {
   console.log('[webhook] pagamento confirmado para', externalId,
-              pedido ? `(plano: ${pedido.plano})` : '(plano desconhecido)',
+              pedido ? `(plano: ${pedido.plano}${pedido.bumps.length ? ' + ' + pedido.bumps.join(', ') : ''})` : '(plano desconhecido)',
               transacao.customer.email ? `e-mail: ${transacao.customer.email}` : '');
 }

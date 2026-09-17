@@ -4,15 +4,18 @@ Landing page de vendas com checkout PIX integrado à **ZuckPay**, hospedada na
 Vercel. Mesma arquitetura da Vet Fácil.
 
 ```
-public/index.html     página de vendas + modal de checkout (arquivo único)
-public/img/           imagens do produto (ver public/img/LEIA-ME.md)
-api/criar-pix.js      cria a cobrança PIX
-api/status.js         consulta o status do pagamento
-api/webhook.js        recebe o postback da ZuckPay
-lib/zuckpay.js        cliente da API v3 da ZuckPay
-lib/planos.js         os planos e os PREÇOS (fonte da verdade)
-lib/pedido.js         identificador do pedido (external_id_client)
-lib/validacao.js      validação dos dados do comprador, no servidor
+public/index.html       página de vendas + modal de checkout (arquivo único)
+public/img/             imagens do produto
+public/favicon.svg      ícone da marca
+api/criar-pix.js        cria a cobrança PIX
+api/status.js           consulta o status do pagamento
+api/bumps.js            order bumps válidos para o plano
+api/webhook.js          recebe o postback da ZuckPay
+lib/zuckpay.js          cliente da API v3 da ZuckPay
+lib/planos.js           planos, order bumps e PREÇOS (fonte da verdade)
+lib/pedido.js           identificador do pedido (external_id_client)
+lib/validacao.js        validação dos dados do comprador, no servidor
+scripts/servidor-local.js  servidor de desenvolvimento
 ```
 
 ## Configuração
@@ -28,34 +31,56 @@ Na Vercel, em **Settings > Environment Variables**, defina:
 O `webhook_secret` é **diferente** do client secret. Com ele definido, o
 `api/webhook.js` recusa qualquer postback sem assinatura válida.
 
-Para rodar local: `cp .env.example .env.local`, preencha e `npm run dev`
-(precisa da CLI da Vercel).
+Para rodar local: `cp .env.example .env.local`, preencha e
+`node --env-file=.env.local scripts/servidor-local.js` (abre em
+http://localhost:3000). Com a CLI da Vercel, `npm run dev` também serve.
+
+## Preços
+
+Tudo em `lib/planos.js`, em **centavos**. É a única fonte da verdade: o
+navegador manda só o id do plano e os ids dos extras marcados, nunca o valor.
+
+| Item | Preço |
+|---|---|
+| Kit Básico (`basico`) | R$ 10,90 |
+| Kit Premium (`premium`) | R$ 27,90 |
+| Cada material extra (order bump) | R$ 6,90 |
+
+**Os order bumps são os outros cinco materiais**, oferecidos no checkout de quem
+escolhe o Básico: jogo da memória, caça-palavras, cruzadinha, complete o
+versículo e ligue o personagem à história. Quem escolhe o Premium não vê a
+seção — o Premium já traz os cinco, e oferecer de novo seria cobrar duas vezes.
+
+O preço de R$ 6,90 mantém a escada de pé: Básico + 1 extra sai R$ 17,80 e
+Básico + 2 sai R$ 24,70, ambos abaixo do Premium, que continua o melhor
+negócio para quem quer tudo. Se subir muito o valor do extra, dois deles já
+passam o Premium e a oferta perde o sentido.
 
 ## Como funciona
 
 1. O visitante clica em um plano e preenche nome, e-mail, CPF e celular.
-2. `api/criar-pix` monta o pedido — **o preço vem de `lib/planos.js`, nunca do
-   navegador** — e chama `POST /v3/pix/qrcode` na ZuckPay.
-3. A página mostra o QR Code e o copia-e-cola, e consulta `api/status` até o
+2. `api/bumps` devolve os extras válidos para aquele plano; o total é recalculado
+   na tela a cada extra marcado.
+3. `api/criar-pix` monta o pedido — **o total vem de `lib/planos.js`** — e chama
+   `POST /v3/pix/qrcode` na ZuckPay.
+4. A página mostra o QR Code e o copia-e-cola, e consulta `api/status` até o
    pagamento ser confirmado.
-4. A ZuckPay chama `api/webhook`, que **reconsulta** a cobrança na API antes de
+5. A ZuckPay chama `api/webhook`, que **reconsulta** a cobrança na API antes de
    dar qualquer coisa por paga.
 
-Planos: **Kit Básico R$ 10,90** (`basico`) e **Kit Premium R$ 27,90**
-(`premium`). Para mudar preço, mexa em `lib/planos.js` (valor em centavos) e no
-rótulo dentro do `public/index.html`.
+O que foi comprado fica codificado no próprio identificador do pedido
+(`qsj-<plano>-<extras>-<nonce>`, ver `lib/pedido.js`), então o webhook sabe o
+que entregar sem banco de dados.
 
 ## Pendências
 
-- **Imagens do produto** — são 10 arquivos, listados em `public/img/LEIA-ME.md`.
-  Enquanto não existirem, o lugar mostra um quadro tracejado com o nome
-  esperado. Assim que o arquivo subir com aquele nome, a imagem aparece sozinha.
 - **Entrega por e-mail** — `entregarProduto()` no `api/webhook.js` hoje só
   registra no log. É ali que entra o envio do link do PDF, e precisa ser
   idempotente: o mesmo postback pode chegar mais de uma vez.
-- **Depoimentos** — os seis são ilustrativos e atribuídos a funções
-  ("Professora de EBD"), não a pessoas inventadas. Ao ter mensagens reais,
-  troque o texto, ponha o nome e remova o aviso `#aviso-depoimentos`.
+- **Avaliações** — as quatro conversas do carrossel são reais, mas falam do
+  *Passa ou Repassa Bíblico*, não deste jogo. Por isso o título diz "nossos
+  materiais". Ao receber mensagens sobre o Quem Sou Eu?, troque as imagens em
+  `public/img/avaliacao-0*.png` e ajuste o título da seção.
 - **Cronômetro de 15 min** — herdado da Vet Fácil. Se não houver prazo real,
   remova a barra sticky no topo do `<body>`.
 - **Meta Pixel** — a página não tem pixel. Se for anunciar, vale portar o

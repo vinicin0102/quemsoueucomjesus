@@ -2,13 +2,14 @@
  * POST /api/criar-pix — cria a cobrança PIX na ZuckPay.
  *
  * Corpo (do navegador):
- *   { plano: "basico" | "premium", name, email, document, phone, tracking? }
+ *   { plano: "basico" | "premium", bumps: ["caca-palavras"],
+ *     name, email, document, phone, tracking? }
  *
- * O navegador NÃO envia valor: o preço é montado no servidor (lib/planos.js).
+ * O navegador NÃO envia valor: o total é montado no servidor (lib/planos.js).
  *
- * O `hash` devolvido é o external_id_client da cobrança. Ele carrega o plano
- * comprado (lib/pedido.js), para o status e o webhook saberem o que entregar
- * sem banco de dados.
+ * O `hash` devolvido é o external_id_client da cobrança. Ele carrega o plano e
+ * os bumps comprados (lib/pedido.js), para o status e o webhook saberem o que
+ * entregar sem banco de dados.
  */
 
 const { criarCobranca } = require('../lib/zuckpay');
@@ -26,7 +27,8 @@ module.exports = async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
 
     // 1. Pedido. Preço sempre do servidor.
-    const pedido = montarPedido(body.plano);
+    const bumps = [...new Set(Array.isArray(body.bumps) ? body.bumps : [])];
+    const pedido = montarPedido(body.plano, bumps);
     if (!pedido.ok) {
       // Erro de configuração (preço faltando) é problema nosso, não do
       // comprador: 500, e a mensagem real vai para o log, não para a tela.
@@ -47,7 +49,7 @@ module.exports = async function handler(req, res) {
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers['x-forwarded-host'] || req.headers.host;
 
-    const externalId = novoId(String(body.plano));
+    const externalId = novoId(String(body.plano), bumps);
     const cobranca = await criarCobranca({
       externalId,
       valorCentavos: pedido.amount,
@@ -73,6 +75,7 @@ module.exports = async function handler(req, res) {
       checkoutUrl: cobranca.checkoutUrl,
       valor: pedido.amount,
       plano: String(body.plano),
+      bumps,
       itens: pedido.resumo
     });
   } catch (err) {

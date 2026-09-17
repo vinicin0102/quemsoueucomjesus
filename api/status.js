@@ -29,7 +29,8 @@ module.exports = async function handler(req, res) {
       status: t.status,
       pago,
       finalizado: ['paid', 'canceled', 'refunded'].includes(t.status),
-      plano: pedido ? pedido.plano : null
+      plano: pedido ? pedido.plano : null,
+      bumps: pedido ? pedido.bumps : []
     });
   } catch (err) {
     if (err.status === 404) return res.status(404).json({ erro: 'Cobrança não encontrada.' });
