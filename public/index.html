@@ -2,6 +2,16 @@
 <html lang="pt-BR" class="scroll-smooth">
 <head>
 <meta charset="UTF-8">
+
+<!-- Página de vendas sempre começa no topo.
+     Por padrão o navegador guarda onde você parou e devolve você para lá na
+     próxima visita ao MESMO endereço. Num site comum isso é bom; numa página
+     de vendas é o contrário: quem volta pelo link cai no meio, sem ver a
+     oferta desde o começo. Precisa rodar antes de o navegador restaurar, por
+     isso está aqui em cima e não junto do resto do script. -->
+<script>
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quem Sou Eu? Personagens Bíblicos | Jogo pronto para a aula infantil</title>
 <meta name="description" content="Jogo de adivinhação com mais de 40 personagens bíblicos para EBD, ministério infantil e famílias. Material digital em PDF, pronto para imprimir e brincar.">
@@ -1010,7 +1020,16 @@ function ativarRolagemLimpa() {
   });
 }
 
+/* Sem âncora no endereço, entrar na página é começar do topo. Com âncora
+ * (/#planos), respeitamos o destino: foi alguém pedindo aquela seção. */
+function comecarNoTopo() {
+  if (location.hash) return;
+  window.scrollTo(0, 0);
+}
+addEventListener('pageshow', comecarNoTopo);   // cobre o voltar do navegador
+
 window.addEventListener('load', () => {
+  comecarNoTopo();
   startTimer();
   initCarrosseis();
   initToasts();
