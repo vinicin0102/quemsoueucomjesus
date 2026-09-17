@@ -1027,6 +1027,10 @@ function ativarRolagemLimpa() {
     if (!alvo) return;
 
     e.preventDefault();
+    // Sem isto, o comecarNoTopo agendado logo apos o carregamento cancelava a
+    // rolagem de quem clicava no CTA nos primeiros instantes — justamente o
+    // botao do topo, que e o mais clicado.
+    assumirControle();
     alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
@@ -1036,13 +1040,15 @@ function ativarRolagemLimpa() {
  *
  * O guarda existe porque a página é alta e demora a montar: se a pessoa já
  * começou a rolar por conta própria, não puxamos ela de volta. */
-let pessoaRolou = false;
+let pessoaAssumiu = false;
+function assumirControle() { pessoaAssumiu = true; }
+
 ['wheel', 'touchmove', 'keydown'].forEach(evento =>
-  addEventListener(evento, () => { pessoaRolou = true; }, { passive: true, once: true })
+  addEventListener(evento, assumirControle, { passive: true, once: true })
 );
 
 function comecarNoTopo() {
-  if (!pessoaRolou) window.scrollTo(0, 0);
+  if (!pessoaAssumiu) window.scrollTo(0, 0);
 }
 
 // Em vários momentos porque cada navegador rola num instante diferente:
@@ -1052,12 +1058,15 @@ addEventListener('pageshow', comecarNoTopo);
 setTimeout(comecarNoTopo, 0);
 setTimeout(comecarNoTopo, 300);
 
+// Registrado ja, e nao no load: quem clica no CTA no primeiro segundo precisa
+// ser atendido igual a quem clica depois.
+ativarRolagemLimpa();
+
 window.addEventListener('load', () => {
   comecarNoTopo();
   startTimer();
   initCarrosseis();
   initToasts();
-  ativarRolagemLimpa();
 });
 
 /* ================= TOAST: CONFIGURAÇÕES ================= */
