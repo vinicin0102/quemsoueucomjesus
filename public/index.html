@@ -571,11 +571,7 @@
       </div>
 
       <!-- Kit Premium -->
-      <!-- order-first: no celular o Premium vem antes do Básico. Empilhado, quem
-           abre os planos cai direto na oferta principal em vez de rolar uma tela
-           inteira de Básico. No desktop os dois ficam lado a lado e a ordem
-           natural volta (md:order-none). -->
-      <div class="order-first md:order-none w-full md:w-1/2 lg:w-[500px] bg-white rounded-[2rem] shadow-2xl p-8 flex flex-col text-gray-800 border-4 border-vibrant-yellow relative transform transition hover:-translate-y-3 md:-mt-4 md:mb-4">
+      <div class="w-full md:w-1/2 lg:w-[500px] bg-white rounded-[2rem] shadow-2xl p-8 flex flex-col text-gray-800 border-4 border-vibrant-yellow relative transform transition hover:-translate-y-3 md:-mt-4 md:mb-4">
         <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-vibrant-yellow text-medical-900 text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-lg whitespace-nowrap">
           ⭐ Mais escolhido
         </div>
@@ -990,10 +986,35 @@ function initCarrosseis() {
   });
 }
 
+/* ================= CTAs QUE NÃO SUJAM A URL =================
+ * Os botões continuam sendo <a href="#planos"> — funcionam sem JS, dá para
+ * abrir em outra aba, e o leitor de tela entende que é um link.
+ *
+ * O que muda: o clique rola a página SEM escrever "#planos" no endereço.
+ * Escrevendo, o endereço vira .../#planos e fica assim no histórico; da
+ * próxima vez que a pessoa entrasse por ali o navegador a jogava direto no
+ * meio da página, no lugar do topo.
+ *
+ * Quem abrir /#planos de propósito continua caindo nos planos: só o clique
+ * deixou de criar esse endereço sozinho. */
+function ativarRolagemLimpa() {
+  document.addEventListener('click', e => {
+    const link = e.target.closest('a[href^="#"]');
+    if (!link || link.getAttribute('href') === '#') return;
+
+    const alvo = document.querySelector(link.getAttribute('href'));
+    if (!alvo) return;
+
+    e.preventDefault();
+    alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 window.addEventListener('load', () => {
   startTimer();
   initCarrosseis();
   initToasts();
+  ativarRolagemLimpa();
 });
 
 /* ================= TOAST: CONFIGURAÇÕES ================= */
