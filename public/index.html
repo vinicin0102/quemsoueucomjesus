@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quem Sou Eu? Personagens Bíblicos | Jogo pronto para a aula infantil</title>
+<meta name="description" content="Jogo de adivinhação com personagens bíblicos para EBD, ministério infantil e famílias. Material digital em PDF, pronto para imprimir e brincar.">
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Ícones Lucide -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<!-- QR Code (fallback quando a API nao devolve imagem pronta) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<!-- Configuração de cores customizadas -->
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] },
+        colors: {
+          medical: {
+            900: '#1E3A6E', /* Azul profundo (títulos) */
+            800: '#2C4E8A'
+          },
+          dark: { 950: '#13254A', 900: '#1A2F5C' },
+          vibrant: {
+            yellow:    '#FFC533', /* Amarelo (estrelas, destaques) */
+            rose:      '#EF6C1A', /* Laranja: cor de ação */
+            roseHover: '#D2550B',
+            red:       '#DC4A3D'  /* Vermelho suavizado (urgência) */
+          }
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Inter', sans-serif; background-color: #FFFFFF; }
+
+  /* Fundo creme alternativo */
+  .bg-print-theme { background-color: #FFF9F2; }
+
+  .floating { animation: float 6s ease-in-out infinite; }
+  @keyframes float {
+    0%   { transform: translateY(0px); }
+    50%  { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+  }
+
+  @keyframes btnPulse {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(239, 108, 26, 0.4); }
+    70%  { transform: scale(1.03); box-shadow: 0 0 0 15px rgba(239, 108, 26, 0); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(239, 108, 26, 0); }
+  }
+  .btn-pulse { animation: btnPulse 2s infinite; }
+
+  /* ================= PLACEHOLDER DE IMAGEM =================
+     Enquanto as imagens reais do produto não estiverem em quem-sou-eu/img/,
+     cada <img data-slot> vira este quadro, dizendo qual arquivo falta. */
+  .slot-vazio{
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; text-align: center; padding: 28px 18px; min-height: 190px;
+    border: 2px dashed #F3C9A6; border-radius: 18px;
+    background: repeating-linear-gradient(45deg, #FFF9F2 0 12px, #FFF3E6 12px 24px);
+    color: #A9713F;
+  }
+  .slot-vazio b{ font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+  .slot-vazio code{ font-size: 11px; font-weight: 700; background: #fff; border: 1px solid #F3C9A6; border-radius: 6px; padding: 3px 8px; }
+  .slot-vazio span{ font-size: 11px; font-weight: 600; opacity: .85; max-width: 30ch; }
+
+  /* ================= TOAST DE PROVA SOCIAL ================= */
+  #toast-compras{
+    position: fixed; right: 14px; left: 14px; bottom: 16px; z-index: 99999;
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(250,250,250,.96));
+    border: 1px solid rgba(15,23,42,.08);
+    box-shadow: 0 18px 40px rgba(2,6,23,.18), 0 4px 12px rgba(2,6,23,.08);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    transform: translateY(140%) scale(.96); opacity: 0;
+    transition: transform .55s cubic-bezier(.22,1,.36,1), opacity .4s ease;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    pointer-events: none; max-width: 410px;
+  }
+  #toast-compras.show { transform: translateY(0) scale(1); opacity: 1; }
+  #toast-compras .icon{
+    flex: 0 0 42px; width: 42px; height: 42px; border-radius: 14px;
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  #toast-compras .icon svg { width: 20px; height: 20px; fill: #15803d; }
+  #toast-compras .content { flex: 1; min-width: 0; }
+  #toast-compras .topline { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 4px; }
+  #toast-compras .nome  { font-size: 14px; line-height: 1.2; font-weight: 700; color: #0f172a; margin: 0; }
+  #toast-compras .tempo { white-space: nowrap; font-size: 11px; line-height: 1.2; color: #64748b; margin: 1px 0 0 0; }
+  #toast-compras .msg   { font-size: 13px; line-height: 1.4; color: #334155; margin: 0 0 8px 0; }
+  #toast-compras .footer{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #toast-compras .chip{
+    display: inline-flex; align-items: center; gap: 6px; min-height: 26px;
+    padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  }
+  #toast-compras .chip-status { background: rgba(22,163,74,.10); color: #166534; }
+  #toast-compras .chip-local  { background: rgba(59,130,246,.08); color: #1d4ed8; }
+  #toast-compras .pulse{
+    width: 7px; height: 7px; border-radius: 50%; background: #16a34a;
+    box-shadow: 0 0 0 rgba(22,163,74,.45); animation: pulseDot 1.8s infinite;
+  }
+  @keyframes pulseDot{
+    0%   { box-shadow: 0 0 0 0 rgba(22,163,74,.40); }
+    70%  { box-shadow: 0 0 0 8px rgba(22,163,74,0); }
+    100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+  }
+  @media (min-width: 768px){
+    #toast-compras { left: auto; right: 22px; bottom: 22px; }
+  }
+</style>
+</head>
+<body class="text-gray-800 antialiased">
+
+<!-- ============ BARRA STICKY DE CONTAGEM REGRESSIVA ============ -->
+<div class="bg-vibrant-red text-white py-2 px-2 text-center z-[999] sticky top-0 w-full shadow-md">
+  <p class="text-[11px] sm:text-sm font-black flex justify-center items-center gap-2 m-0 uppercase tracking-wider">
+    <span>Essa oferta termina em:</span>
+    <span class="bg-white/20 px-2 py-0.5 rounded text-xs sm:text-base tracking-widest font-mono font-bold" id="countdown-timer">00:15:00</span>
+  </p>
+</div>
+
+<!-- ============ HERO ============ -->
+<header class="relative overflow-hidden border-b border-black/5 bg-print-theme">
+  <div class="container mx-auto px-4 pt-6 pb-10 sm:px-6 sm:pt-8 sm:pb-16 lg:pt-10 lg:pb-20 relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
+
+    <!-- Coluna esquerda -->
+    <div class="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left lg:sticky lg:top-24">
+
+      <!-- Capa do produto -->
+      <div class="w-full max-w-[420px] mb-6 sm:mb-8 relative z-20 mx-auto lg:mx-0">
+        <div class="relative rounded-2xl overflow-hidden shadow-xl bg-white p-2 border border-orange-100">
+          <img data-slot="img/capa-principal.png" data-legenda="Capa do jogo: cartas espalhadas com o nome do produto"
+               src="img/capa-principal.png" alt="Kit Quem Sou Eu? Personagens Bíblicos"
+               class="w-full h-auto object-contain rounded-xl">
+        </div>
+        <p class="text-center text-[11px] sm:text-xs font-bold text-gray-500 mt-2">
+          Veja o material antes de escolher seu kit
+        </p>
+      </div>
+
+      <!-- CTA -->
+      <div class="w-full flex flex-col items-center lg:items-start mb-8 sm:mb-10 z-20">
+        <a href="#planos"
+           class="btn-pulse w-[90%] sm:w-auto bg-vibrant-rose hover:bg-vibrant-roseHover text-white text-base sm:text-xl font-black py-4 sm:py-5 px-6 sm:px-10 rounded-full text-center uppercase tracking-wider block shadow-xl shadow-orange-500/20 transition-colors">
+          Quero o Quem Sou Eu?
+        </a>
+        <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3 mt-3 sm:mt-4 text-[10px] sm:text-xs font-bold text-gray-600">
+          <div class="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md shadow-sm">
+            <i data-lucide="printer" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-vibrant-rose"></i>
+            <span>Imprime em casa</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md shadow-sm">
+            <i data-lucide="users" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-vibrant-rose"></i>
+            <span>Turma inteira participa</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md shadow-sm">
+            <i data-lucide="zap" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-vibrant-rose"></i>
+            <span>Sem preparo demorado</span>
+          </div>
+        </div>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl lg:text-6xl font-black leading-tight mb-4 sm:mb-6 text-medical-900 drop-shadow-sm text-center lg:text-left">
+        Quem Sou Eu? +<br>
+        <span class="text-vibrant-rose">Personagens Bíblicos</span>
+      </h1>
+
+      <p class="text-base sm:text-lg lg:text-xl text-gray-700 mb-6 leading-relaxed font-medium text-center lg:text-left">
+        Um jogo completo, pronto para imprimir, que transforma a aula bíblica numa brincadeira
+        de adivinhação. As crianças aprendem os personagens da Bíblia enquanto participam e se divertem.
+      </p>
+
+      <p class="text-sm sm:text-md font-bold text-medical-900 mb-8 bg-white/70 backdrop-blur p-4 rounded-xl border border-white flex items-center gap-3 shadow-sm mx-auto lg:mx-0 w-fit">
+        <span class="bg-vibrant-rose text-white p-1 rounded-full"><i data-lucide="zap" class="w-4 h-4"></i></span>
+        Compre, receba por e-mail, imprima e já use na próxima aula.
+      </p>
+    </div>
+
+    <!-- Coluna direita: amostras do material -->
+    <div class="w-full lg:w-1/2 relative flex flex-col items-center justify-center mt-12 lg:mt-0 z-10 pb-12">
+
+      <div class="text-center mb-6 w-full">
+        <h2 class="text-2xl sm:text-4xl font-black text-medical-900 leading-tight">
+          <span class="text-vibrant-rose">Tudo pronto</span>, é só imprimir
+        </h2>
+        <p class="text-base sm:text-lg text-gray-600 mt-1 uppercase tracking-widest font-bold">
+          40 cartas, regras e <span class="text-vibrant-rose inline-block ml-1">atividades extras</span>
+        </p>
+      </div>
+
+      <!-- Slider de páginas internas -->
+      <div class="relative w-full max-w-lg floating mb-16 bg-white p-2 sm:p-3 rounded-[2rem] shadow-xl border border-orange-50 mx-auto">
+        <div class="relative w-full rounded-2xl overflow-hidden">
+          <img data-slot="img/amostra-1.png" data-legenda="Folha de cartas impressa" src="img/amostra-1.png" alt="Amostra 1" class="slider-img w-full h-auto object-contain transition-opacity duration-1000 opacity-100 relative">
+          <img data-slot="img/amostra-2.png" data-legenda="Cartas recortadas" src="img/amostra-2.png" alt="Amostra 2" class="slider-img w-full h-full object-contain transition-opacity duration-1000 opacity-0 absolute inset-0">
+          <img data-slot="img/amostra-3.png" data-legenda="Página de regras" src="img/amostra-3.png" alt="Amostra 3" class="slider-img w-full h-full object-contain transition-opacity duration-1000 opacity-0 absolute inset-0">
+          <img data-slot="img/amostra-4.png" data-legenda="Crianças usando as cartas" src="img/amostra-4.png" alt="Amostra 4" class="slider-img w-full h-full object-contain transition-opacity duration-1000 opacity-0 absolute inset-0">
+        </div>
+      </div>
+
+      <!-- Atividades extras -->
+      <div class="text-center mb-4 w-full">
+        <h2 class="text-2xl sm:text-3xl font-black text-vibrant-rose uppercase">
+          + Atividades extras: caça-palavras, memória e desafios
+        </h2>
+      </div>
+      <div class="relative w-full max-w-lg floating mb-16" style="animation-delay: 0.5s;">
+        <img data-slot="img/atividades-extras.png" data-legenda="Caça-palavras e jogo da memória impressos"
+             src="img/atividades-extras.png" alt="Atividades extras"
+             class="w-full object-contain filter drop-shadow-xl rounded-2xl">
+      </div>
+
+      <!-- Bônus do Kit Premium -->
+      <div class="text-center mb-4 w-full">
+        <p class="font-black text-xs sm:text-sm uppercase tracking-widest mb-1 drop-shadow-sm text-medical-900">Incluso no Kit Premium</p>
+        <h2 class="text-xl sm:text-2xl font-black text-medical-900 leading-tight">
+          Dinâmicas Bíblicas<br><span class="text-sm font-bold text-gray-500">(4 materiais extras para imprimir)</span>
+        </h2>
+      </div>
+      <div class="relative w-full max-w-lg floating mb-16" style="animation-delay: 1s;">
+        <img data-slot="img/bonus-premium.png" data-legenda="Os 4 bônus do Kit Premium"
+             src="img/bonus-premium.png" alt="Bônus do Kit Premium"
+             class="w-full object-contain filter drop-shadow-xl rounded-2xl">
+      </div>
+
+    </div>
+  </div>
+</header>
+
+<!-- ============ PROVA SOCIAL ============ -->
+<section class="bg-vibrant-rose py-8 shadow-inner">
+  <div class="container mx-auto px-6 text-center">
+    <div class="flex flex-col md:flex-row items-center justify-center gap-6">
+      <p class="text-white font-bold text-base md:text-xl">
+        Feito para <span class="bg-white text-vibrant-rose px-2 font-black rounded">professoras de EBD, ministério infantil e famílias</span> que querem uma aula mais participativa.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BENEFÍCIOS ============ -->
+<section class="py-20 bg-white/40 backdrop-blur-sm border-b border-black/5">
+  <div class="container mx-auto px-6">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <h2 class="text-3xl md:text-4xl font-black text-medical-900 mb-4">Por que o Quem Sou Eu? funciona na aula?</h2>
+      <p class="text-gray-500 text-lg">Uma dinâmica simples, pensada para turma de igreja: todo mundo participa e ninguém fica de fora.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="bg-white p-8 rounded-3xl border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all group">
+        <div class="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-orange-100 group-hover:bg-vibrant-rose transition-colors">
+          <i data-lucide="printer" class="w-6 h-6 text-vibrant-rose group-hover:text-white transition-colors"></i>
+        </div>
+        <h3 class="text-xl font-black text-medical-900 mb-3">Pronto para imprimir</h3>
+        <p class="text-gray-500 leading-relaxed">PDF organizado no tamanho certo para papel A4. Imprime, recorta e a atividade está pronta.</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-3xl border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all group">
+        <div class="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-orange-100 group-hover:bg-vibrant-rose transition-colors">
+          <i data-lucide="lightbulb" class="w-6 h-6 text-vibrant-rose group-hover:text-white transition-colors"></i>
+        </div>
+        <h3 class="text-xl font-black text-medical-900 mb-3">Pistas prontas na carta</h3>
+        <p class="text-gray-500 leading-relaxed">Cada personagem vem com dicas que ajudam a conduzir a brincadeira, mesmo com quem nunca deu aula.</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-3xl border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all group">
+        <div class="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-orange-100 group-hover:bg-vibrant-rose transition-colors">
+          <i data-lucide="users" class="w-6 h-6 text-vibrant-rose group-hover:text-white transition-colors"></i>
+        </div>
+        <h3 class="text-xl font-black text-medical-900 mb-3">A turma inteira participa</h3>
+        <p class="text-gray-500 leading-relaxed">Uns dão as pistas, outro adivinha. Até a criança tímida entra, porque dar dica é mais fácil que responder pergunta.</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-3xl border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all group">
+        <div class="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-orange-100 group-hover:bg-vibrant-rose transition-colors">
+          <i data-lucide="book-open" class="w-6 h-6 text-vibrant-rose group-hover:text-white transition-colors"></i>
+        </div>
+        <h3 class="text-xl font-black text-medical-900 mb-3">Antigo e Novo Testamento</h3>
+        <p class="text-gray-500 leading-relaxed">Personagens conhecidos dos dois testamentos, com a referência bíblica impressa na própria carta.</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-3xl border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all group">
+        <div class="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-orange-100 group-hover:bg-vibrant-rose transition-colors">
+          <i data-lucide="repeat" class="w-6 h-6 text-vibrant-rose group-hover:text-white transition-colors"></i>
+        </div>
+        <h3 class="text-xl font-black text-medical-900 mb-3">Usa o ano inteiro</h3>
+        <p class="text-gray-500 leading-relaxed">O arquivo fica com você. Imprime de novo quando precisar, para outra turma ou outro encontro.</p>
+      </div>
+
+      <div class="bg-white p-8 rounded-3xl border border-orange-100 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all group">
+        <div class="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-orange-100 group-hover:bg-vibrant-rose transition-colors">
+          <i data-lucide="sparkles" class="w-6 h-6 text-vibrant-rose group-hover:text-white transition-colors"></i>
+        </div>
+        <h3 class="text-xl font-black text-medical-900 mb-3">Atividades extras (Diferencial)</h3>
+        <p class="text-gray-500 leading-relaxed">No Kit Premium vêm caça-palavras, jogo da memória, desafios e dinâmicas para variar as próximas aulas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ O QUE VEM NO MATERIAL ============ -->
+<section class="py-20 relative overflow-hidden">
+  <div class="container mx-auto px-6 relative z-10">
+    <div class="flex flex-col lg:flex-row items-center gap-16">
+      <div class="w-full lg:w-1/2">
+        <h2 class="text-3xl md:text-4xl font-black text-medical-900 mb-6">O que vem no material?</h2>
+        <p class="text-gray-600 text-lg mb-8">Do arquivo à brincadeira: cartas, regras e tudo o que você precisa para aplicar sem preparar nada antes.</p>
+
+        <h3 class="text-base sm:text-lg font-black text-medical-900 mb-4 uppercase tracking-widest flex items-center gap-2">
+          <i data-lucide="layers" class="w-5 h-5 text-vibrant-rose"></i> Está incluso
+        </h3>
+        <ul class="space-y-3">
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">40 cartas de personagens bíblicos</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Pistas e referência bíblica em cada carta</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Página de regras, explicando a dinâmica passo a passo</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Arquivo em PDF no tamanho A4, com marcas de recorte</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Versão colorida e versão econômica (gasta menos tinta)</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Acesso digital para reimprimir quando quiser</span></li>
+        </ul>
+
+        <div class="mt-8 pt-6 border-t border-gray-300">
+          <h3 class="text-base sm:text-lg font-black text-medical-900 mb-4 uppercase tracking-widest flex items-center gap-2">
+            <i data-lucide="book-open" class="w-5 h-5 text-vibrant-rose"></i> Personagens
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Noé, Abraão, Sara e Isaque</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Moisés, Arão, Josué e Gideão</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Davi, Salomão e Samuel</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Daniel, Jonas e Elias</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Ester, Rute, Débora e Miriam</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Maria, José e João Batista</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Pedro, André, Tiago e João</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Paulo, Lucas, Marta e Zaqueu</span>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-300">
+          <h3 class="text-base sm:text-lg font-black text-medical-900 mb-4 uppercase tracking-widest flex items-center gap-2">
+            <i data-lucide="play" class="w-5 h-5 text-vibrant-rose"></i> Como se joga
+          </h3>
+          <ul class="space-y-3">
+            <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">A criança pega uma carta sem olhar</span></li>
+            <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Segura na testa, virada para a turma</span></li>
+            <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Os colegas dão as pistas da carta</span></li>
+            <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-vibrant-rose font-black">Ela descobre qual personagem é</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="w-full lg:w-1/2 flex flex-col sm:block relative h-auto sm:h-[650px] lg:h-[750px] mt-16 sm:mt-10 lg:mt-4 gap-12 sm:gap-0">
+        <div class="w-full sm:absolute sm:top-0 sm:right-2 sm:w-[90%] lg:w-[85%] z-10 flex justify-center">
+          <img data-slot="img/material-1.png" data-legenda="Folha de cartas dentro do PDF"
+               src="img/material-1.png" alt="Conteúdo do material 1"
+               class="w-[115%] max-w-[115%] sm:w-full sm:max-w-full -ml-[7.5%] sm:ml-0 object-contain filter drop-shadow-xl rounded-2xl floating">
+        </div>
+        <div class="w-full sm:absolute sm:bottom-0 sm:left-2 sm:w-[90%] lg:w-[85%] z-20 flex justify-center mt-8 sm:mt-0">
+          <img data-slot="img/material-2.png" data-legenda="Página de regras do jogo"
+               src="img/material-2.png" alt="Conteúdo do material 2"
+               class="w-[115%] max-w-[115%] sm:w-full sm:max-w-full -ml-[7.5%] sm:ml-0 object-contain filter drop-shadow-2xl rounded-2xl floating" style="animation-delay: 1.5s;">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BÔNUS DO KIT PREMIUM ============ -->
+<section class="py-20 relative overflow-hidden bg-orange-50/30 border-t border-orange-100">
+  <div class="container mx-auto px-6 relative z-10">
+    <div class="flex flex-col lg:flex-row-reverse items-center gap-16">
+      <div class="w-full lg:w-1/2">
+        <div class="inline-block bg-vibrant-rose text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest mb-4 shadow-sm">
+          Incluso no Kit Premium
+        </div>
+        <h2 class="text-3xl md:text-4xl font-black text-medical-900 mb-6">Dinâmicas Bíblicas:<br><span class="text-vibrant-rose">4 materiais extras</span></h2>
+        <p class="text-gray-600 text-lg mb-8">Além do jogo principal, o Kit Premium traz mais quatro materiais prontos para imprimir. São atividades diferentes para quando a turma já conhece a brincadeira e você precisa variar.</p>
+
+        <h3 class="text-base sm:text-lg font-black text-medical-900 mb-4 uppercase tracking-widest flex items-center gap-2">
+          <i data-lucide="gift" class="w-5 h-5 text-vibrant-rose"></i> O que vem junto
+        </h3>
+        <ul class="space-y-3 mb-8">
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Dinâmicas Bíblicas — atividades em grupo para a aula</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Caça-palavras Bíblico — para imprimir e distribuir</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Jogo da Memória Bíblico — pares de personagens</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Perguntas Bíblicas Extras — desafios rápidos</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-base text-gray-800 font-semibold">Cartas adicionais de personagens</span></li>
+        </ul>
+
+        <div class="mt-8 pt-6 border-t border-gray-300">
+          <h3 class="text-base sm:text-lg font-black text-medical-900 mb-4 uppercase tracking-widest flex items-center gap-2">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-vibrant-rose"></i> Para usar em
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Escola Bíblica Dominical</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Ministério infantil</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Culto infantil</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Férias e acampamentos</span>
+            <span class="bg-white text-gray-600 border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Culto doméstico</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full lg:w-1/2 flex justify-center mt-10 lg:mt-0 relative">
+        <img data-slot="img/dinamicas-biblicas.png" data-legenda="Os materiais bônus impressos"
+             src="img/dinamicas-biblicas.png" alt="Dinâmicas Bíblicas"
+             class="w-full max-w-lg object-contain filter drop-shadow-2xl floating rounded-2xl relative z-20">
+        <div class="absolute inset-0 bg-gradient-to-tr from-vibrant-rose/20 to-transparent rounded-full blur-3xl w-3/4 h-3/4 m-auto z-10"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEPOIMENTOS ============
+     Posicionada logo antes dos planos: a pessoa lê a prova social e
+     encontra o preço em seguida.
+
+     IMPORTANTE: os textos abaixo são ILUSTRATIVOS e por isso estão
+     atribuídos a funções ("Professora de EBD"), não a pessoas inventadas.
+     Ao receber mensagens reais, troque o texto, ponha o nome real e
+     remova o aviso que fica abaixo da grade.
+
+     AVATARES: hoje são iniciais em círculo. Para usar as fotos reais,
+     troque a <span> das iniciais por:
+       <img src="URL" alt="" class="w-full h-full object-cover">
+-->
+<section class="py-20 bg-white border-t border-orange-100">
+  <div class="container mx-auto px-6">
+
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <div class="inline-flex items-center gap-2 bg-orange-50 border border-orange-100 text-vibrant-rose text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+        Feedback de quem ensina
+      </div>
+      <h2 class="text-3xl md:text-4xl font-black text-medical-900 mb-3">
+        Quem já usou na turma
+      </h2>
+      <div class="flex items-center justify-center gap-2 text-sm font-bold text-gray-500">
+        <span class="text-vibrant-yellow text-lg leading-none" aria-hidden="true">★★★★★</span>
+        <span>A proposta aprovada por quem dá aula para crianças</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+
+      <figure class="bg-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-orange-900/5 transition-shadow flex flex-col">
+        <div class="text-vibrant-yellow text-base leading-none mb-3" aria-label="5 de 5 estrelas">★★★★★</div>
+        <blockquote class="text-sm text-gray-700 leading-relaxed flex-grow">
+          “As crianças pediram para repetir no domingo seguinte. Foi a aula em que todo mundo quis falar.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 mt-4 pt-4 border-t border-orange-50">
+          <span class="w-9 h-9 rounded-full bg-vibrant-rose text-white text-xs font-black flex items-center justify-center shrink-0 overflow-hidden">EB</span>
+          <span class="text-sm font-black text-medical-900">Professora de EBD</span>
+        </figcaption>
+      </figure>
+
+      <figure class="bg-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-orange-900/5 transition-shadow flex flex-col">
+        <div class="text-vibrant-yellow text-base leading-none mb-3" aria-label="5 de 5 estrelas">★★★★★</div>
+        <blockquote class="text-sm text-gray-700 leading-relaxed flex-grow">
+          “Imprimi na sexta à noite e usei no sábado. Não precisei preparar mais nada.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 mt-4 pt-4 border-t border-orange-50">
+          <span class="w-9 h-9 rounded-full bg-vibrant-rose text-white text-xs font-black flex items-center justify-center shrink-0 overflow-hidden">MI</span>
+          <span class="text-sm font-black text-medical-900">Líder de ministério infantil</span>
+        </figcaption>
+      </figure>
+
+      <figure class="bg-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-orange-900/5 transition-shadow flex flex-col">
+        <div class="text-vibrant-yellow text-base leading-none mb-3" aria-label="5 de 5 estrelas">★★★★★</div>
+        <blockquote class="text-sm text-gray-700 leading-relaxed flex-grow">
+          “Viramos o culto doméstico em jogo. Meu filho agora sabe quem foi Gideão.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 mt-4 pt-4 border-t border-orange-50">
+          <span class="w-9 h-9 rounded-full bg-vibrant-rose text-white text-xs font-black flex items-center justify-center shrink-0 overflow-hidden">PM</span>
+          <span class="text-sm font-black text-medical-900">Mãe</span>
+        </figcaption>
+      </figure>
+
+      <figure class="bg-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-orange-900/5 transition-shadow flex flex-col">
+        <div class="text-vibrant-yellow text-base leading-none mb-3" aria-label="5 de 5 estrelas">★★★★★</div>
+        <blockquote class="text-sm text-gray-700 leading-relaxed flex-grow">
+          “Eu tinha medo de não segurar a turma. As pistas da carta me ajudaram a conduzir.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 mt-4 pt-4 border-t border-orange-50">
+          <span class="w-9 h-9 rounded-full bg-vibrant-rose text-white text-xs font-black flex items-center justify-center shrink-0 overflow-hidden">VO</span>
+          <span class="text-sm font-black text-medical-900">Voluntária</span>
+        </figcaption>
+      </figure>
+
+      <figure class="bg-white border border-orange-100 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-orange-900/5 transition-shadow flex flex-col">
+        <div class="text-vibrant-yellow text-base leading-none mb-3" aria-label="5 de 5 estrelas">★★★★★</div>
+        <blockquote class="text-sm text-gray-700 leading-relaxed flex-grow">
+          “Dei uma via impressa para cada professora. Usamos nas três salas no mesmo domingo.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 mt-4 pt-4 border-t border-orange-50">
+          <span class="w-9 h-9 rounded-full bg-vibrant-rose text-white text-xs font-black flex items-center justify-center shrink-0 overflow-hidden">CO</span>
+          <span class="text-sm font-black text-medical-900">Coordenadora infantil</span>
+        </figcaption>
+      </figure>
+
+      <figure class="bg-white border-2 border-vibrant-rose rounded-2xl p-5 shadow-lg shadow-orange-900/5 flex flex-col">
+        <div class="text-vibrant-yellow text-base leading-none mb-3" aria-label="5 de 5 estrelas">★★★★★</div>
+        <blockquote class="text-sm text-medical-900 font-semibold leading-relaxed flex-grow">
+          “Funcionou até com os mais tímidos: dar pista é mais fácil do que responder pergunta.”
+        </blockquote>
+        <figcaption class="flex items-center gap-3 mt-4 pt-4 border-t border-orange-100">
+          <span class="w-9 h-9 rounded-full bg-vibrant-rose text-white text-xs font-black flex items-center justify-center shrink-0 overflow-hidden">PR</span>
+          <span class="text-sm font-black text-medical-900">Professora · turma agitada</span>
+        </figcaption>
+      </figure>
+
+    </div>
+
+    <!-- Remova este aviso quando os depoimentos acima forem reais. -->
+    <p id="aviso-depoimentos" class="text-center text-[11px] text-gray-400 font-semibold mt-6">
+      Depoimentos ilustrativos da proposta do material.
+    </p>
+
+    <div class="text-center mt-10">
+      <a href="#planos"
+         class="inline-block bg-vibrant-rose hover:bg-vibrant-roseHover text-white font-black py-4 px-10 rounded-full uppercase tracking-widest text-sm shadow-xl shadow-orange-500/20 transition-colors">
+        Quero garantir o meu
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLANOS ============
+     Os preços aqui são só o rótulo. O valor cobrado vem de lib/planos.js,
+     nos planos "basico" e "premium". -->
+<section id="planos" class="py-24 bg-white/40 backdrop-blur border-t border-black/5">
+  <div class="container mx-auto px-6 relative z-10">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <h2 class="text-3xl md:text-5xl font-extrabold text-medical-900 mb-6">Escolha seu kit</h2>
+      <p class="text-gray-600 text-lg">Acesso imediato ao arquivo. Imprime hoje e usa na próxima aula.</p>
+    </div>
+
+    <div class="flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 max-w-6xl mx-auto">
+
+      <!-- Kit Básico -->
+      <div class="w-full md:w-1/2 lg:w-[400px] bg-white rounded-[2rem] shadow-xl hover:shadow-orange-900/10 p-8 flex flex-col text-gray-800 border border-gray-200 transform transition hover:-translate-y-2">
+        <h3 class="text-2xl font-bold text-medical-900 mb-2">Kit Básico</h3>
+        <p class="text-gray-500 mb-6 min-h-[48px] font-semibold">O jogo completo, pronto para a próxima aula</p>
+        <div class="mb-6">
+          <span class="text-5xl font-extrabold text-medical-900 tracking-tighter">R$ 10<span class="text-3xl">,90</span></span>
+          <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-bold">pagamento único</p>
+        </div>
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-6 inline-flex items-center gap-2 shadow-sm">
+          <i data-lucide="file-text" class="w-5 h-5 text-vibrant-rose shrink-0"></i>
+          <span class="font-bold text-medical-900">PDF do Quem Sou Eu?</span>
+        </div>
+        <ul class="space-y-4 mb-8 flex-grow text-gray-600 font-medium">
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>40 cartas de personagens bíblicos</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Pistas e referência bíblica em cada carta</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Regras do jogo e arquivo pronto para imprimir</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Versão colorida e versão econômica</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Acesso digital para reimprimir quando quiser</span></li>
+          <li class="flex items-start"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span>Garantia de 7 dias</span></li>
+        </ul>
+        <button type="button" data-plano="basico"
+           class="btn-checkout w-full block text-center bg-gray-100 hover:bg-gray-200 text-medical-900 font-bold py-4 px-6 rounded-2xl transition uppercase tracking-widest text-sm">
+          Quero o Kit Básico
+        </button>
+      </div>
+
+      <!-- Kit Premium -->
+      <div class="w-full md:w-1/2 lg:w-[500px] bg-white rounded-[2rem] shadow-2xl p-8 flex flex-col text-gray-800 border-4 border-vibrant-rose relative transform transition hover:-translate-y-3 md:-mt-4 md:mb-4">
+        <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-vibrant-rose text-white text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-lg whitespace-nowrap">
+          ⭐ Mais escolhido
+        </div>
+        <h3 class="text-3xl font-black text-medical-900 mb-2 mt-2">Kit Premium</h3>
+        <p class="text-vibrant-rose font-bold mb-6 min-h-[48px]">O jogo + os materiais extras para o ano inteiro</p>
+        <div class="mb-6">
+          <p class="text-sm font-bold text-gray-400 line-through leading-none mb-1">De R$ 67,90</p>
+          <span class="text-6xl font-extrabold text-vibrant-rose tracking-tighter">R$ 27<span class="text-3xl">,90</span></span>
+          <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-bold">pagamento único</p>
+        </div>
+        <div class="bg-orange-50 rounded-xl p-3 mb-6 inline-flex items-center gap-2 border border-orange-100 shadow-sm">
+          <i data-lucide="file-text" class="w-5 h-5 text-vibrant-rose shrink-0"></i>
+          <span class="font-bold text-medical-900">5 materiais · 40+ cartas · atividades extras</span>
+        </div>
+        <ul class="space-y-3 mb-8 flex-grow">
+          <li class="flex items-start bg-orange-50 p-3 rounded-xl border border-orange-100"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-medical-900 font-bold">Quem Sou Eu? <span class="font-medium text-gray-500">· 40 cartas + regras</span></span></li>
+          <li class="flex items-start bg-orange-50 p-3 rounded-xl border border-orange-100"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-medical-900 font-bold">Cartas adicionais <span class="font-medium text-gray-500">· mais personagens</span></span></li>
+          <li class="flex items-start bg-orange-50 p-3 rounded-xl border border-orange-100"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-medical-900 font-bold">Dinâmicas Bíblicas</span></li>
+          <li class="flex items-start bg-orange-50 p-3 rounded-xl border border-orange-100"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-medical-900 font-bold">Caça-palavras Bíblico</span></li>
+          <li class="flex items-start bg-orange-50 p-3 rounded-xl border border-orange-100"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-medical-900 font-bold">Jogo da Memória Bíblico</span></li>
+          <li class="flex items-start bg-orange-50 p-3 rounded-xl border border-orange-100"><i data-lucide="check" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-medical-900 font-bold">Perguntas Bíblicas Extras</span></li>
+          <li class="flex items-start bg-orange-50 p-3 rounded-xl border border-orange-100 shadow-sm"><i data-lucide="gift" class="w-5 h-5 text-vibrant-rose mr-2 mt-0.5 shrink-0"></i><span class="text-vibrant-rose font-black">Versão econômica para economizar tinta</span></li>
+        </ul>
+        <p class="text-center text-xs text-gray-500 font-semibold -mt-4 mb-6">Separados, sairiam por <span class="line-through">R$ 99,60</span></p>
+        <button type="button" data-plano="premium"
+           class="btn-checkout w-full block text-center bg-vibrant-rose hover:bg-vibrant-roseHover text-white text-lg font-black py-5 px-6 rounded-2xl shadow-xl transition transform hover:scale-[1.02] uppercase tracking-widest">
+          Quero o Kit Premium
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="py-24 bg-white border-t border-gray-200">
+  <div class="container mx-auto px-6 max-w-3xl">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl font-black text-medical-900 mb-4 uppercase tracking-widest">Dúvidas Frequentes</h2>
+      <p class="text-gray-500">Tudo o que você precisa saber antes de adquirir seu material.</p>
+    </div>
+
+    <div class="space-y-4">
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-orange-100 transition-colors">
+        <button class="w-full px-8 py-6 text-left flex justify-between items-center focus:outline-none transition-colors hover:bg-orange-50/50" onclick="toggleFaq(1)">
+          <span class="font-bold text-medical-900 text-lg">A compra é segura?</span>
+          <i data-lucide="chevron-down" id="faq-icon-1" class="w-5 h-5 text-vibrant-rose transition-transform shrink-0"></i>
+        </button>
+        <div id="faq-content-1" class="px-8 pb-6 text-gray-500 hidden leading-relaxed text-sm">
+          Sim. O pagamento é processado pela ZuckPay, plataforma de pagamentos para produtos digitais, direto pelo PIX do seu banco. Nenhum dado de cartão é pedido.
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-orange-100 transition-colors">
+        <button class="w-full px-8 py-6 text-left flex justify-between items-center focus:outline-none transition-colors hover:bg-orange-50/50" onclick="toggleFaq(2)">
+          <span class="font-bold text-medical-900 text-lg">Quando recebo o material?</span>
+          <i data-lucide="chevron-down" id="faq-icon-2" class="w-5 h-5 text-vibrant-rose transition-transform shrink-0"></i>
+        </button>
+        <div id="faq-content-2" class="px-8 pb-6 text-gray-500 hidden leading-relaxed text-sm">
+          Na hora. Assim que o PIX é confirmado, o acesso é enviado para o e-mail que você informar na compra. Se não encontrar, confira a caixa de spam.
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-orange-100 transition-colors">
+        <button class="w-full px-8 py-6 text-left flex justify-between items-center focus:outline-none transition-colors hover:bg-orange-50/50" onclick="toggleFaq(3)">
+          <span class="font-bold text-medical-900 text-lg">O produto é físico ou digital?</span>
+          <i data-lucide="chevron-down" id="faq-icon-3" class="w-5 h-5 text-vibrant-rose transition-transform shrink-0"></i>
+        </button>
+        <div id="faq-content-3" class="px-8 pb-6 text-gray-500 hidden leading-relaxed text-sm">
+          É 100% digital. Você recebe um arquivo em PDF para baixar e imprimir quantas vezes quiser nas suas atividades. Nenhum item físico é enviado pelo correio.
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-orange-100 transition-colors">
+        <button class="w-full px-8 py-6 text-left flex justify-between items-center focus:outline-none transition-colors hover:bg-orange-50/50" onclick="toggleFaq(4)">
+          <span class="font-bold text-medical-900 text-lg">Para quem serve?</span>
+          <i data-lucide="chevron-down" id="faq-icon-4" class="w-5 h-5 text-vibrant-rose transition-transform shrink-0"></i>
+        </button>
+        <div id="faq-content-4" class="px-8 pb-6 text-gray-500 hidden leading-relaxed text-sm">
+          Para professoras de EBD, líderes de ministério infantil, voluntários e pais. A dinâmica funciona melhor com crianças em idade escolar, aproximadamente de 6 a 12 anos, e pode ser adaptada conforme a turma.
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-orange-100 transition-colors">
+        <button class="w-full px-8 py-6 text-left flex justify-between items-center focus:outline-none transition-colors hover:bg-orange-50/50" onclick="toggleFaq(5)">
+          <span class="font-bold text-medical-900 text-lg">Preciso de impressora especial?</span>
+          <i data-lucide="chevron-down" id="faq-icon-5" class="w-5 h-5 text-vibrant-rose transition-transform shrink-0"></i>
+        </button>
+        <div id="faq-content-5" class="px-8 pb-6 text-gray-500 hidden leading-relaxed text-sm">
+          Não. Impressora comum e papel A4 já resolvem. Também vai uma versão econômica, que usa menos tinta, e você pode imprimir só as cartas que for usar naquela aula.
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-orange-100 transition-colors">
+        <button class="w-full px-8 py-6 text-left flex justify-between items-center focus:outline-none transition-colors hover:bg-orange-50/50" onclick="toggleFaq(6)">
+          <span class="font-bold text-medical-900 text-lg">Quais as formas de pagamento?</span>
+          <i data-lucide="chevron-down" id="faq-icon-6" class="w-5 h-5 text-vibrant-rose transition-transform shrink-0"></i>
+        </button>
+        <div id="faq-content-6" class="px-8 pb-6 text-gray-500 hidden leading-relaxed text-sm">
+          Aceitamos pagamento <strong>exclusivamente via PIX</strong>, o que garante a aprovação e a liberação imediata do seu material.
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-orange-100 transition-colors">
+        <button class="w-full px-8 py-6 text-left flex justify-between items-center focus:outline-none transition-colors hover:bg-orange-50/50" onclick="toggleFaq(7)">
+          <span class="font-bold text-medical-900 text-lg">Tenho garantia?</span>
+          <i data-lucide="chevron-down" id="faq-icon-7" class="w-5 h-5 text-vibrant-rose transition-transform shrink-0"></i>
+        </button>
+        <div id="faq-content-7" class="px-8 pb-6 text-gray-500 hidden leading-relaxed text-sm">
+          Sim. Você tem 7 dias de garantia conforme as condições apresentadas na compra. Se perceber que o material não é para você nesse prazo, é só solicitar o reembolso.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RODAPÉ ============ -->
+<footer class="bg-medical-900 py-16 text-center text-white">
+  <div class="container mx-auto px-6">
+    <h2 class="text-2xl font-black mb-6 italic">Quem Sou Eu? — Personagens Bíblicos<span class="text-vibrant-rose">.</span></h2>
+    <p class="text-xs text-gray-300 font-semibold mb-6">Produto digital. Nenhum item físico será enviado.</p>
+    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+      © 2026 Quem Sou Eu? — Personagens Bíblicos. Todos os direitos reservados.
+    </p>
+  </div>
+</footer>
+
+<!-- ============ MODAL DE CHECKOUT PIX ============ -->
+<div id="checkout-modal" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-medical-900/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="checkout-titulo">
+  <div class="bg-white w-full max-w-md rounded-[1.75rem] shadow-2xl max-h-[92vh] overflow-y-auto relative">
+
+    <button type="button" id="checkout-fechar" aria-label="Fechar"
+            class="absolute top-4 right-4 text-gray-400 hover:text-medical-900 transition z-10">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+
+    <!-- ETAPA 1: dados do comprador -->
+    <div id="etapa-form" class="p-8">
+      <p class="text-vibrant-rose text-[10px] font-black uppercase tracking-widest mb-1">Pagamento via PIX</p>
+      <h3 id="checkout-titulo" class="text-2xl font-black text-medical-900 mb-1">Kit Básico</h3>
+
+      <div class="flex items-center gap-3 mb-6">
+        <p class="text-3xl font-black text-vibrant-rose shrink-0" id="checkout-valor">R$ 10,90</p>
+        <p class="flex items-start gap-1.5 text-[11px] font-bold text-medical-900 leading-snug">
+          <span class="text-base leading-none shrink-0" aria-hidden="true">👁️</span>
+          <span>Outras <span id="espectadores" class="text-vibrant-rose font-black">70</span> pessoas estão finalizando a compra neste momento</span>
+        </p>
+      </div>
+
+      <form id="form-checkout" novalidate class="space-y-4">
+        <div>
+          <label for="cf-nome" class="block text-xs font-black uppercase tracking-widest text-medical-900 mb-1.5">Nome completo</label>
+          <input id="cf-nome" name="nome" type="text" autocomplete="name" required
+                 class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vibrant-rose focus:ring-2 focus:ring-vibrant-rose/20 transition">
+        </div>
+        <div>
+          <label for="cf-email" class="block text-xs font-black uppercase tracking-widest text-medical-900 mb-1.5">E-mail</label>
+          <input id="cf-email" name="email" type="email" autocomplete="email" required
+                 class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vibrant-rose focus:ring-2 focus:ring-vibrant-rose/20 transition">
+          <p class="text-[11px] text-gray-400 mt-1">É para este e-mail que enviaremos o seu material.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="cf-cpf" class="block text-xs font-black uppercase tracking-widest text-medical-900 mb-1.5">CPF</label>
+            <input id="cf-cpf" name="cpf" type="text" inputmode="numeric" maxlength="14" required
+                   class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vibrant-rose focus:ring-2 focus:ring-vibrant-rose/20 transition">
+          </div>
+          <div>
+            <label for="cf-tel" class="block text-xs font-black uppercase tracking-widest text-medical-900 mb-1.5">Celular</label>
+            <input id="cf-tel" name="telefone" type="tel" inputmode="numeric" maxlength="15" required
+                   class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-vibrant-rose focus:ring-2 focus:ring-vibrant-rose/20 transition">
+          </div>
+        </div>
+
+        <!-- TOTAL -->
+        <div class="border-t border-dashed border-gray-200 pt-4 flex items-baseline justify-between">
+          <span class="text-xs font-black uppercase tracking-widest text-gray-500">Total</span>
+          <span id="checkout-total" class="text-2xl font-black text-vibrant-rose">R$ 10,90</span>
+        </div>
+
+        <div id="checkout-erros" class="hidden bg-orange-50 border border-orange-200 text-vibrant-red text-xs font-semibold rounded-xl p-3" role="alert"></div>
+
+        <!-- Prova social compacta, no momento da decisão -->
+        <div class="bg-orange-50/60 border border-orange-100 rounded-xl p-3">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-vibrant-yellow text-sm leading-none" aria-hidden="true">★★★★★</span>
+            <span class="text-[11px] font-black text-medical-900">Material pronto para a próxima aula</span>
+          </div>
+          <p class="text-[11px] text-gray-600 leading-snug italic">
+            “Imprimi na sexta à noite e usei no sábado.” — líder de ministério infantil
+          </p>
+        </div>
+
+        <button type="submit" id="btn-gerar"
+                class="w-full bg-vibrant-rose hover:bg-vibrant-roseHover text-white font-black py-4 rounded-2xl uppercase tracking-widest text-sm transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          <span id="btn-gerar-texto">Gerar código PIX</span>
+        </button>
+        <p class="text-[11px] text-gray-400 text-center">Seus dados são usados apenas para emitir a cobrança.</p>
+      </form>
+    </div>
+
+    <!-- ETAPA 2: QR Code -->
+    <div id="etapa-pix" class="p-8 hidden text-center">
+      <p class="text-vibrant-rose text-[10px] font-black uppercase tracking-widest mb-1">Escaneie para pagar</p>
+      <h3 class="text-xl font-black text-medical-900 mb-4">Seu PIX está pronto</h3>
+
+      <div class="bg-white border-2 border-gray-100 rounded-2xl p-4 inline-block mb-4 shadow-sm">
+        <canvas id="pix-qr" width="220" height="220" class="block"></canvas>
+        <img id="pix-qr-img" alt="QR Code PIX" class="hidden w-[220px] h-[220px] object-contain">
+      </div>
+
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ou use o copia e cola</p>
+      <div class="flex gap-2 mb-4">
+        <input id="pix-codigo" type="text" readonly
+               class="flex-1 min-w-0 border border-gray-200 bg-gray-50 rounded-xl px-3 py-2.5 text-[11px] font-mono text-gray-600 truncate">
+        <button type="button" id="btn-copiar"
+                class="bg-medical-900 hover:bg-medical-800 text-white font-black text-xs uppercase tracking-widest px-4 rounded-xl transition shrink-0">
+          Copiar
+        </button>
+      </div>
+
+      <div class="bg-orange-50 border border-orange-100 rounded-xl p-3 flex items-center justify-center gap-2 text-xs font-bold text-medical-900">
+        <span class="w-2 h-2 rounded-full bg-vibrant-rose animate-pulse"></span>
+        <span id="pix-status">Aguardando pagamento…</span>
+      </div>
+
+      <!-- Cronômetro de urgência (4 min). Não interfere no polling nem na
+           validade real da cobrança. -->
+      <div id="pix-urgencia" class="mt-3 bg-medical-900 text-white rounded-xl py-3 px-4">
+        <p class="text-[10px] font-black uppercase tracking-widest text-white/70 mb-0.5">
+          Por apenas, tempo limitado
+        </p>
+        <p class="text-3xl font-black tracking-tight tabular-nums" id="pix-cronometro">04:00</p>
+      </div>
+      <p class="text-[11px] text-gray-400 mt-3">A liberação é automática assim que o PIX cair.</p>
+    </div>
+
+    <!-- ETAPA 3: aprovado -->
+    <div id="etapa-ok" class="p-10 hidden text-center">
+      <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
+        <i data-lucide="check" class="w-8 h-8 text-green-600"></i>
+      </div>
+      <h3 class="text-2xl font-black text-medical-900 mb-2">Pagamento aprovado!</h3>
+      <p class="text-gray-500 text-sm">
+        Enviamos o acesso para <strong class="text-medical-900" id="ok-email"></strong>.
+        Se não encontrar, confira a caixa de spam.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST DE PROVA SOCIAL ============ -->
+<div id="toast-compras" aria-live="polite" aria-atomic="true">
+  <div class="icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+  </div>
+  <div class="content">
+    <div class="topline">
+      <p class="nome">Cliente</p>
+      <p class="tempo">agora mesmo</p>
+    </div>
+    <p class="msg">acabou de garantir o acesso</p>
+    <div class="footer">
+      <div class="chip chip-status">
+        <span class="pulse"></span>
+        <span class="pagamento">Pix aprovado</span>
+      </div>
+      <div class="chip chip-local local-wrap" style="display:none;">
+        <span class="cidade">São Paulo</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= ÍCONES ================= */
+lucide.createIcons();
+
+/* ================= PLACEHOLDER DE IMAGEM =================
+ * Enquanto o arquivo real não existe em quem-sou-eu/img/, o <img> vira um
+ * quadro tracejado dizendo qual arquivo colocar ali. Assim que você subir a
+ * imagem com esse nome, ela aparece sozinha — não precisa mexer no código. */
+document.querySelectorAll('img[data-slot]').forEach(img => {
+  img.addEventListener('error', () => {
+    if (img.dataset.trocado) return;
+    img.dataset.trocado = '1';
+    const caixa = document.createElement('div');
+    caixa.className = 'slot-vazio ' + img.className.replace(/object-contain|object-cover/g, '');
+    caixa.innerHTML =
+      '<b>Imagem do produto</b>' +
+      '<code>' + img.dataset.slot + '</code>' +
+      '<span>' + (img.dataset.legenda || '') + '</span>';
+    img.replaceWith(caixa);
+  }, { once: true });
+});
+
+/* ================= FAQ ================= */
+function toggleFaq(id) {
+  const content = document.getElementById(`faq-content-${id}`);
+  const icon = document.getElementById(`faq-icon-${id}`);
+  content.classList.toggle('hidden');
+  if (icon) icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+/* ================= CONTAGEM REGRESSIVA (15 min, persistida) ================= */
+function startTimer() {
+  const display = document.getElementById('countdown-timer');
+  if (!display) return;
+  const timeToCount = 15 * 60 * 1000;
+  const now = Date.now();
+  let endTime = Number(localStorage.getItem('qseOfferEndTime'));
+  if (!endTime || now > endTime) {
+    endTime = now + timeToCount;
+    localStorage.setItem('qseOfferEndTime', endTime);
+  }
+  setInterval(() => {
+    const distance = endTime - Date.now();
+    if (distance <= 0) { display.innerHTML = "00:00:00"; return; }
+    const minutes = Math.floor((distance % (1000*60*60)) / (1000*60));
+    const seconds = Math.floor((distance % (1000*60)) / 1000);
+    display.innerHTML = `00:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+  }, 1000);
+}
+
+/* ================= SLIDERS ================= */
+function initFader(selector, intervalMs = 3500) {
+  const slides = document.querySelectorAll(selector);
+  if (slides.length === 0) return;
+  let current = [...slides].findIndex(s => s.classList.contains('opacity-100'));
+  if (current < 0) current = 0;
+  setInterval(() => {
+    slides[current].classList.replace('opacity-100', 'opacity-0');
+    current = (current + 1) % slides.length;
+    slides[current].classList.replace('opacity-0', 'opacity-100');
+  }, intervalMs);
+}
+
+window.addEventListener('load', () => {
+  startTimer();
+  initFader('.slider-img');
+  initToasts();
+});
+
+/* ================= TOAST: CONFIGURAÇÕES ================= */
+const delayToastSeg   = 0.8;
+const intervaloMinSeg = 9;
+const intervaloMaxSeg = 18;
+const duracaoToastMs  = 4200;
+const quantidadeNomes = 18;
+const chanceSobrenome = 0.65;
+const chanceCidade    = 0.72;
+const chanceTempoAgora= 0.18;
+
+const randomNumber = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const pick = arr => arr[randomNumber(0, arr.length - 1)];
+
+function gerarCompras(qtd = 12) {
+  const primeirosNomes = [
+    "Amanda","Bruna","Carla","Daniel","Eduardo","Fernanda","Guilherme","Helena","Isadora","João",
+    "Karen","Larissa","Matheus","Natália","Otávio","Priscila","Rafaela","Samuel","Tatiane","Vinícius",
+    "Aline","Bianca","Caetano","Débora","Elisa","Felipe","Gabriela","Hugo","Iara","Juliano",
+    "Lívia","Marcelo","Nicolas","Paula","Renan","Stella","Thiago","Valentina","Yuri","Camila",
+    "Beatriz","Luiza","André","Diego","Marina","Clara","Miguel","Leonardo","Patrícia","Vanessa"
+  ];
+  const sobrenomes = [
+    "Silva","Souza","Oliveira","Costa","Almeida","Pereira","Rodrigues","Lima","Martins","Ferreira",
+    "Gomes","Ribeiro","Carvalho","Mendes","Barbosa","Teixeira","Moreira","Araujo","Rocha","Dias",
+    "Cardoso","Freitas","Moura","Batista","Monteiro","Cavalcanti","Nogueira","Campos","Santana","Correia"
+  ];
+  const cidades = [
+    "São Paulo","Rio de Janeiro","Belo Horizonte","Curitiba","Recife","Fortaleza","Salvador","Campinas",
+    "Goiânia","João Pessoa","Florianópolis","Porto Alegre","Natal","Maceió","Santos","Ribeirão Preto",
+    "Londrina","Sorocaba","Niterói","Maringá"
+  ];
+  const mensagens = [
+    "acabou de garantir o material",
+    "finalizou a compra agora",
+    "garantiu o Kit Premium",
+    "acabou de liberar o acesso",
+    "confirmou a compra do material",
+    "garantiu a oferta disponível"
+  ];
+  // O checkout só aceita PIX: o aviso não pode citar outro meio.
+  const pagamentos = ["Pix"];
+
+  const usados = new Set();
+  const lista = [];
+
+  while (lista.length < qtd) {
+    const nome = pick(primeirosNomes);
+    const sobrenome = Math.random() < chanceSobrenome
+      ? pick(sobrenomes)
+      : pick(["A.","B.","C.","D.","F.","G.","L.","M.","P.","R.","S.","T."]);
+    const nomeCompleto = `${nome} ${sobrenome}`;
+    if (usados.has(nomeCompleto)) continue;
+    usados.add(nomeCompleto);
+
+    let tempoTexto;
+    if (Math.random() < chanceTempoAgora) {
+      tempoTexto = "agora mesmo";
+    } else {
+      const minutos = randomNumber(1, 47);
+      tempoTexto = `há ${minutos} minuto${minutos > 1 ? "s" : ""}`;
+    }
+
+    lista.push({
+      nome: nomeCompleto,
+      tempo: tempoTexto,
+      msg: pick(mensagens),
+      pagamento: pick(pagamentos),
+      cidade: Math.random() < chanceCidade ? pick(cidades) : null
+    });
+  }
+  return lista;
+}
+
+function initToasts() {
+  const toast = document.getElementById('toast-compras');
+  if (!toast) return;
+
+  const elNome  = toast.querySelector('.nome');
+  const elTempo = toast.querySelector('.tempo');
+  const elMsg   = toast.querySelector('.msg');
+  const elPag   = toast.querySelector('.pagamento');
+  const elLocal = toast.querySelector('.local-wrap');
+  const elCidade= toast.querySelector('.cidade');
+
+  let fila = gerarCompras(quantidadeNomes);
+  let i = 0;
+
+  function mostrar() {
+    if (i >= fila.length) { fila = gerarCompras(quantidadeNomes); i = 0; }
+    const c = fila[i++];
+
+    elNome.textContent  = c.nome;
+    elTempo.textContent = c.tempo;
+    elMsg.textContent   = c.msg;
+    elPag.textContent   = `${c.pagamento} aprovado`;
+
+    if (c.cidade) { elCidade.textContent = c.cidade; elLocal.style.display = 'inline-flex'; }
+    else { elLocal.style.display = 'none'; }
+
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duracaoToastMs);
+    setTimeout(mostrar, (duracaoToastMs / 1000 + randomNumber(intervaloMinSeg, intervaloMaxSeg)) * 1000);
+  }
+
+  setTimeout(mostrar, delayToastSeg * 1000);
+}
+
+/* ================= CHECKOUT PIX (ZuckPay) =================
+ * Endpoints em /api (funções Node na Vercel). O navegador manda só o id do
+ * plano; quem decide quanto cobrar é o lib/planos.js, no servidor. */
+(function () {
+  'use strict';
+
+  const API = '/api';
+
+  const PLANOS = {
+    basico:  { nome: 'Kit Básico',  valor: 'R$ 10,90' },
+    premium: { nome: 'Kit Premium', valor: 'R$ 27,90' }
+  };
+
+  const modal   = document.getElementById('checkout-modal');
+  const form    = document.getElementById('form-checkout');
+  const etapas  = {
+    form: document.getElementById('etapa-form'),
+    pix:  document.getElementById('etapa-pix'),
+    ok:   document.getElementById('etapa-ok')
+  };
+  const btnGerar = document.getElementById('btn-gerar');
+  const erros    = document.getElementById('checkout-erros');
+
+  let planoAtual = null, poll = null, cronometro = null, focoAnterior = null;
+
+  /* ---------- atribuição (UTMs, Meta, Google, TikTok) ---------- */
+  function lerCookie(nome) {
+    const achado = document.cookie.split('; ').find(c => c.indexOf(nome + '=') === 0);
+    return achado ? decodeURIComponent(achado.split('=').slice(1).join('=')) : '';
+  }
+  function rastreio() {
+    const url = new URLSearchParams(location.search), dados = {};
+    ['utm_source','utm_campaign','utm_medium','utm_content','utm_term','gclid','ttclid','click_id']
+      .forEach(k => { const v = url.get(k); if (v) dados[k] = v; });
+    const fbc = lerCookie('_fbc'); if (fbc) dados.fbc = fbc;
+    const fbp = lerCookie('_fbp'); if (fbp) dados.fbp = fbp;
+    return dados;
+  }
+
+  /* ---------- máscaras ---------- */
+  const mascaraCpf = v => v.replace(/\D/g,'').slice(0,11)
+      .replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  const mascaraTel = v => {
+    const d = v.replace(/\D/g,'').slice(0,11);
+    return d.length <= 10
+      ? d.replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{4})(\d)/,'$1-$2')
+      : d.replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d)/,'$1-$2');
+  };
+  document.getElementById('cf-cpf').addEventListener('input', e => { e.target.value = mascaraCpf(e.target.value); });
+  document.getElementById('cf-tel').addEventListener('input', e => { e.target.value = mascaraTel(e.target.value); });
+
+  /* ---------- etapas ---------- */
+  function mostrarEtapa(qual) {
+    Object.entries(etapas).forEach(([nome, el]) => el.classList.toggle('hidden', nome !== qual));
+  }
+
+  function abrir(plano) {
+    if (!PLANOS[plano]) return;
+    planoAtual = plano;
+    focoAnterior = document.activeElement;
+
+    document.getElementById('checkout-titulo').textContent = PLANOS[plano].nome;
+    document.getElementById('checkout-valor').textContent  = PLANOS[plano].valor;
+    document.getElementById('checkout-total').textContent  = PLANOS[plano].valor;
+    document.getElementById('espectadores').textContent    = randomNumber(48, 96);
+
+    limparErros();
+    mostrarEtapa('form');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('cf-nome').focus();
+    lucide.createIcons();
+    if (window.fbq) fbq('track', 'InitiateCheckout', { content_name: PLANOS[plano].nome });
+  }
+
+  function fechar() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+    clearTimeout(poll); clearInterval(cronometro);
+    if (focoAnterior && focoAnterior.focus) focoAnterior.focus();
+  }
+
+  document.querySelectorAll('.btn-checkout').forEach(b => {
+    b.addEventListener('click', () => abrir(b.dataset.plano));
+  });
+  document.getElementById('checkout-fechar').addEventListener('click', fechar);
+  modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) fechar();
+  });
+
+  /* ---------- erros ---------- */
+  function limparErros() { erros.classList.add('hidden'); erros.textContent = ''; }
+  function mostrarErro(msg) { erros.textContent = msg; erros.classList.remove('hidden'); }
+
+  function carregando(estado) {
+    btnGerar.disabled = estado;
+    document.getElementById('btn-gerar-texto').textContent = estado ? 'Gerando…' : 'Gerar código PIX';
+  }
+
+  /* ---------- envio ---------- */
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    limparErros();
+    carregando(true);
+
+    try {
+      const resposta = await fetch(API + '/criar-pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plano:    planoAtual,
+          name:     document.getElementById('cf-nome').value,
+          document: document.getElementById('cf-cpf').value,
+          email:    document.getElementById('cf-email').value,
+          phone:    document.getElementById('cf-tel').value,
+          tracking: rastreio()
+        })
+      });
+      const dados = await resposta.json().catch(() => ({}));
+
+      if (!resposta.ok) {
+        // detalhes[] vem da validação dos campos; detalhes (string) vem da operadora.
+        const campos = Array.isArray(dados.detalhes) ? dados.detalhes.join(' ') : '';
+        mostrarErro(campos || dados.detalhes || dados.erro || 'Não foi possível gerar o PIX.');
+        return;
+      }
+      exibirPix(dados);
+    } catch (_) {
+      mostrarErro('Falha de conexão. Verifique sua internet e tente de novo.');
+    } finally {
+      carregando(false);
+    }
+  });
+
+  /* ---------- pagamento ---------- */
+  function exibirPix(dados) {
+    const codigo = dados.copiaECola || '';
+    document.getElementById('pix-codigo').value = codigo;
+
+    const canvas = document.getElementById('pix-qr');
+    const imagem = document.getElementById('pix-qr-img');
+
+    if (dados.imagemQr) {
+      imagem.src = dados.imagemQr;
+      imagem.classList.remove('hidden');
+      canvas.classList.add('hidden');
+    } else if (window.QRious && codigo) {
+      // A API nem sempre devolve a imagem pronta: desenhamos o QR aqui.
+      new QRious({ element: canvas, value: codigo, size: 220, level: 'M' });
+      canvas.classList.remove('hidden');
+      imagem.classList.add('hidden');
+    }
+
+    mostrarEtapa('pix');
+    lucide.createIcons();
+
+    // Cronômetro visual de 4 min. Não mexe no polling nem na validade real.
+    let restante = 4 * 60;
+    const relogio = document.getElementById('pix-cronometro');
+    clearInterval(cronometro);
+    cronometro = setInterval(() => {
+      restante--;
+      if (restante <= 0) { clearInterval(cronometro); relogio.textContent = '00:00'; return; }
+      relogio.textContent = `${String(Math.floor(restante/60)).padStart(2,'0')}:${String(restante%60).padStart(2,'0')}`;
+    }, 1000);
+
+    clearTimeout(poll);
+    agendarConsulta(dados, 5);
+  }
+
+  /**
+   * A ZuckPay limita requisições, então seguimos o atraso sugerido pelo
+   * servidor em vez de um intervalo fixo.
+   */
+  function agendarConsulta(dados, segundos) {
+    clearTimeout(poll);
+    poll = setTimeout(() => verificar(dados), segundos * 1000);
+  }
+
+  async function verificar(dados) {
+    let proxima = 8;
+    try {
+      const r = await fetch(`${API}/status?hash=${encodeURIComponent(dados.hash)}`);
+      const s = await r.json();
+
+      if (r.ok && s.pago) {
+        clearTimeout(poll); clearInterval(cronometro);
+        document.getElementById('ok-email').textContent = document.getElementById('cf-email').value;
+        mostrarEtapa('ok');
+        lucide.createIcons();
+        if (window.fbq) fbq('track', 'Purchase', { value: dados.valor / 100, currency: 'BRL', content_name: dados.plano });
+        return;
+      }
+      // Recusado, expirado ou estornado: não adianta continuar.
+      if (r.ok && s.finalizado) {
+        clearTimeout(poll); clearInterval(cronometro);
+        document.getElementById('pix-status').textContent = 'Cobrança expirada. Feche e gere um novo PIX.';
+        return;
+      }
+    } catch (_) { /* rede instável: a próxima tentativa resolve */ }
+
+    agendarConsulta(dados, proxima);
+  }
+
+  /* ---------- copiar ---------- */
+  document.getElementById('btn-copiar').addEventListener('click', async function () {
+    const campo = document.getElementById('pix-codigo');
+    try {
+      await navigator.clipboard.writeText(campo.value);
+    } catch (_) {
+      campo.select(); document.execCommand('copy');
+    }
+    this.textContent = 'Copiado!';
+    setTimeout(() => { this.textContent = 'Copiar'; }, 2000);
+  });
+})();
+</script>
+
+</body>
+</html>

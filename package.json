@@ -1,0 +1,13 @@
+{
+  "name": "quemsoueucomjesus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Landing page do Quem Sou Eu? Com Jesus com checkout PIX via ZuckPay",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
