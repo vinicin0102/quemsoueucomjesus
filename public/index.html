@@ -17,14 +17,18 @@
 <meta name="theme-color" content="#0E2E63">
 
 <!-- ============ META PIXEL ============
-     Cole o ID do seu Pixel abaixo (Gerenciador de Eventos > Fontes de dados).
-     Deixe vazio e nada é carregado — a página continua funcionando igual.
+     O id vem da variável META_PIXEL_ID da hospedagem, servida por /api/pixel.
+     É a mesma variável que a Conversions API usa no servidor, então não há
+     como os dois lados apontarem para pixels diferentes.
 
-     O MESMO id precisa ir na variável META_PIXEL_ID da Vercel: é ela que o
-     servidor usa para mandar o Purchase pela Conversions API quando o PIX cai.
+     Variável vazia: nada é carregado e a página funciona igual.
      Os dois lados usam o mesmo event_id, então a Meta não conta em dobro. -->
+<script src="/api/pixel"></script>
 <script>
-  window.META_PIXEL_ID = '';
+  // window.META_PIXEL_ID vem de /api/pixel, que lê a variável META_PIXEL_ID da
+  // Vercel — a MESMA que a Conversions API usa. Um id só, um lugar só.
+  // Para fixar o id no arquivo em vez de usar a variável, descomente:
+  // window.META_PIXEL_ID = '000000000000000';
 
   (function (id) {
     if (!id) return;
@@ -863,8 +867,19 @@
 </div>
 
 <script>
-/* ================= ÍCONES ================= */
-lucide.createIcons();
+/* ================= ÍCONES =================
+ * O lucide vem de CDN e pode ser bloqueado (bloqueador de anúncio, rede da
+ * igreja, CDN fora do ar). Sem esta proteção, a exceção estourava no meio de
+ * abrir() e os order bumps nunca eram carregados — a venda perdia o upsell
+ * sem ninguém perceber. Ícone é enfeite; o checkout não pode depender dele. */
+function icones() {
+  try {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) {
+    console.debug('[icones] indisponível:', err.message);
+  }
+}
+icones();
 
 /* ================= UTILITÁRIOS ================= */
 const formatarBRL = centavos =>
@@ -1225,7 +1240,7 @@ function initToasts() {
       );
 
       wrap.classList.remove('hidden');
-      lucide.createIcons();
+      icones();
     } catch (_) {
       /* sem bumps: o checkout segue funcionando só com o plano */
     }
@@ -1251,7 +1266,7 @@ function initToasts() {
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
     document.getElementById('cf-nome').focus();
-    lucide.createIcons();
+    icones();
 
     carregarBumps(plano);
     rastrear('InitiateCheckout', {
@@ -1349,7 +1364,7 @@ function initToasts() {
     }
 
     mostrarEtapa('pix');
-    lucide.createIcons();
+    icones();
 
     // Cronômetro visual de 4 min. Não mexe no polling nem na validade real.
     let restante = 4 * 60;
@@ -1380,7 +1395,7 @@ function initToasts() {
         clearTimeout(poll); clearInterval(cronometro);
         document.getElementById('ok-email').textContent = document.getElementById('cf-email').value;
         mostrarEtapa('ok');
-        lucide.createIcons();
+        icones();
         // purchase_<hash> é exatamente o event_id que o webhook envia.
         rastrear('Purchase', {
           value: dados.valor / 100,

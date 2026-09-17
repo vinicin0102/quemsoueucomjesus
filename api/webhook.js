@@ -48,6 +48,27 @@ function valorDoPedido(pedido) {
   return r.ok ? r.amount : null;
 }
 
+/**
+ * A ZuckPay manda JSON, mas um teste disparado pelo painel pode chegar como
+ * formulário ou vazio. Aceitamos os dois em vez de recusar o aviso de uma
+ * venda por causa do Content-Type.
+ */
+function interpretarCorpo(cru, contentType) {
+  if (!cru) return {};
+  if (String(contentType || '').includes('application/x-www-form-urlencoded')) {
+    return Object.fromEntries(new URLSearchParams(cru));
+  }
+  try {
+    return JSON.parse(cru);
+  } catch (err) {
+    // Content-Type errado acontece: antes de desistir, tentamos como formulário.
+    const params = new URLSearchParams(cru);
+    const campos = Object.fromEntries(params);
+    if (Object.keys(campos).length && !cru.trim().startsWith('{')) return campos;
+    throw err;
+  }
+}
+
 function idDoCorpo(b) {
   const d = b?.data ?? b ?? {};
   return d.external_id_client ?? d.externalIdClient ?? d.transactionId ?? d.transaction_id ?? d.id ?? null;
@@ -69,13 +90,25 @@ module.exports = async function handler(req, res) {
 
   let body;
   try {
-    body = cru ? JSON.parse(cru) : {};
+    body = interpretarCorpo(cru, req.headers['content-type']);
   } catch {
+    // Corpo truncado ou quebrado: reenviar pode dar certo, então 400.
+    console.error('[webhook] corpo ilegível; recusado para reenvio.');
     return res.status(400).json({ erro: 'Corpo inválido.' });
   }
 
   const id = idDoCorpo(body);
-  if (!id) return res.status(400).json({ erro: 'Identificador da cobrança ausente.' });
+  if (!id) {
+    // Sem identificador, reenviar o MESMO corpo nunca vai funcionar — 400 aqui
+    // só faria a ZuckPay repetir para sempre. Respondemos 200 e registramos as
+    // chaves recebidas (só os nomes, nunca os valores: podem ter dado pessoal)
+    // para dar para descobrir o formato na próxima vez.
+    const d = body?.data ?? body ?? {};
+    console.warn('[webhook] postback sem identificador. chaves recebidas:',
+                 JSON.stringify({ raiz: Object.keys(body || {}), data: Object.keys(d || {}) }),
+                 '| tamanho do corpo:', cru.length);
+    return res.status(200).json({ recebido: true, ignorado: 'sem identificador' });
+  }
 
   try {
     const t = await consultarTransacao(String(id));
