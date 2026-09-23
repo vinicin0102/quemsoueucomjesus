@@ -817,8 +817,8 @@
 </footer>
 
 <!-- ============ POP-UP DA OFERTA DO PREMIUM ============
-     Aparece quando a pessoa clica no Kit Básico, oferecendo o completo pela
-     metade. Fechar no X, no Escape ou no fundo apenas fecha — só o botão
+     Aparece quando a pessoa clica no Kit Básico, oferecendo o completo com
+     desconto. Fechar no X, no Escape ou no fundo apenas fecha — só o botão
      "continuar com o Básico" leva ao checkout do Básico, para ninguém acabar
      comprando um plano que não escolheu. -->
 <div id="oferta-modal" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-medical-900/70 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="oferta-titulo">
@@ -836,7 +836,7 @@
       </div>
 
       <h3 id="oferta-titulo" class="text-2xl sm:text-3xl font-black text-medical-900 leading-tight mb-3">
-        Leve o kit completo<br>pela <span class="text-vibrant-rose">metade do preço</span>
+        Leve o kit completo<br>com <span class="text-vibrant-rose">R$ 10,93 de desconto</span>
       </h3>
 
       <p class="text-sm text-gray-500 leading-relaxed mb-5">
@@ -854,15 +854,15 @@
 
       <div class="bg-blue-50 border border-blue-100 rounded-2xl py-4 mb-5">
         <p class="text-sm font-bold text-gray-400 line-through leading-none mb-1">De R$ 27,90</p>
-        <p class="text-4xl font-black text-vibrant-rose leading-none">R$ 13,95</p>
+        <p class="text-4xl font-black text-vibrant-rose leading-none">R$ 16,97</p>
         <p class="text-[11px] font-black uppercase tracking-widest text-green-600 mt-2">
-          Só R$ 3,05 a mais que o Básico
+          Só R$ 6,07 a mais que o Básico
         </p>
       </div>
 
       <button type="button" id="oferta-aceitar"
               class="btn-sol w-full font-black py-4 rounded-2xl uppercase tracking-widest text-sm transition mb-2">
-        Sim! Quero o completo por R$ 13,95
+        Sim! Quero o completo por R$ 16,97
       </button>
       <button type="button" id="oferta-recusar"
               class="w-full text-gray-400 hover:text-medical-900 text-xs font-bold py-2 transition underline">
@@ -1329,7 +1329,7 @@ function initToasts() {
   const PLANOS = {
     basico:            { nome: 'Kit Básico',            centavos: 1090 },
     premium:           { nome: 'Kit Premium',           centavos: 2790 },
-    'premium-oferta':  { nome: 'Kit Premium (oferta)',  centavos: 1395 }
+    'premium-oferta':  { nome: 'Kit Premium (oferta)',  centavos: 1697 }
   };
 
   const modal  = document.getElementById('checkout-modal');
@@ -1506,7 +1506,7 @@ function initToasts() {
   }
 
   /* ---------- pop-up da oferta ----------
-   * Quem clica no Básico vê primeiro o Premium pela metade. Fechar no X, no
+   * Quem clica no Básico vê primeiro o Premium com desconto. Fechar no X, no
    * Escape ou clicando no fundo só fecha: quem não escolheu nada não vai
    * parar num checkout que não pediu. */
   const oferta = document.getElementById('oferta-modal');
@@ -1518,7 +1518,7 @@ function initToasts() {
     document.getElementById('oferta-aceitar').focus();
     icones();
     rastrear('ViewContent', {
-      content_name: 'Oferta Premium pela metade',
+      content_name: 'Oferta Premium com desconto',
       content_ids: ['premium-oferta'],
       content_type: 'product',
       value: PLANOS['premium-oferta'].centavos / 100,
