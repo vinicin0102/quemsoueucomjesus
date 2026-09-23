@@ -816,6 +816,62 @@
   </div>
 </footer>
 
+<!-- ============ POP-UP DA OFERTA DO PREMIUM ============
+     Aparece quando a pessoa clica no Kit Básico, oferecendo o completo pela
+     metade. Fechar no X, no Escape ou no fundo apenas fecha — só o botão
+     "continuar com o Básico" leva ao checkout do Básico, para ninguém acabar
+     comprando um plano que não escolheu. -->
+<div id="oferta-modal" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-medical-900/70 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="oferta-titulo">
+  <div class="bg-white w-full max-w-md rounded-[1.75rem] shadow-2xl max-h-[92vh] overflow-y-auto relative text-center">
+
+    <button type="button" id="oferta-fechar" aria-label="Fechar"
+            class="absolute top-4 right-4 text-gray-400 hover:text-medical-900 transition z-10">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+
+    <div class="p-8">
+      <div class="inline-flex items-center gap-2 bg-vibrant-yellow text-medical-900 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+        <i data-lucide="gift" class="w-3.5 h-3.5"></i>
+        Espere! Só nesta tela
+      </div>
+
+      <h3 id="oferta-titulo" class="text-2xl sm:text-3xl font-black text-medical-900 leading-tight mb-3">
+        Leve o kit completo<br>pela <span class="text-vibrant-rose">metade do preço</span>
+      </h3>
+
+      <p class="text-sm text-gray-500 leading-relaxed mb-5">
+        Os 5 materiais extras entram no seu pedido: jogo da memória, caça-palavras,
+        cruzadinha, complete o versículo e ligue o personagem à história.
+      </p>
+
+      <div class="flex justify-center gap-1.5 mb-5">
+        <img width="928" height="1152" src="img/bump-jogo-da-memoria.jpg" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover border border-blue-100 shadow-sm">
+        <img width="928" height="1152" src="img/bump-caca-palavras.jpg" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover border border-blue-100 shadow-sm">
+        <img width="928" height="1152" src="img/bump-cruzadinha.jpg" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover border border-blue-100 shadow-sm">
+        <img width="928" height="1152" src="img/bump-complete-versiculo.jpg" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover border border-blue-100 shadow-sm">
+        <img width="928" height="1152" src="img/bump-ligue-personagem.jpg" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover border border-blue-100 shadow-sm">
+      </div>
+
+      <div class="bg-blue-50 border border-blue-100 rounded-2xl py-4 mb-5">
+        <p class="text-sm font-bold text-gray-400 line-through leading-none mb-1">De R$ 27,90</p>
+        <p class="text-4xl font-black text-vibrant-rose leading-none">R$ 13,95</p>
+        <p class="text-[11px] font-black uppercase tracking-widest text-green-600 mt-2">
+          Só R$ 3,05 a mais que o Básico
+        </p>
+      </div>
+
+      <button type="button" id="oferta-aceitar"
+              class="btn-sol w-full font-black py-4 rounded-2xl uppercase tracking-widest text-sm transition mb-2">
+        Sim! Quero o completo por R$ 13,95
+      </button>
+      <button type="button" id="oferta-recusar"
+              class="w-full text-gray-400 hover:text-medical-900 text-xs font-bold py-2 transition underline">
+        Não, continuar com o Básico por R$ 10,90
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL DE CHECKOUT PIX ============ -->
 <div id="checkout-modal" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-medical-900/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="checkout-titulo">
   <div class="bg-white w-full max-w-md rounded-[1.75rem] shadow-2xl max-h-[92vh] overflow-y-auto relative">
@@ -1271,8 +1327,9 @@ function initToasts() {
 
   // Apenas os rótulos do modal. O valor cobrado vem do servidor.
   const PLANOS = {
-    basico:  { nome: 'Kit Básico',  centavos: 1090 },
-    premium: { nome: 'Kit Premium', centavos: 2790 }
+    basico:            { nome: 'Kit Básico',            centavos: 1090 },
+    premium:           { nome: 'Kit Premium',           centavos: 2790 },
+    'premium-oferta':  { nome: 'Kit Premium (oferta)',  centavos: 1395 }
   };
 
   const modal  = document.getElementById('checkout-modal');
@@ -1448,13 +1505,56 @@ function initToasts() {
     if (focoAnterior && focoAnterior.focus) focoAnterior.focus();
   }
 
+  /* ---------- pop-up da oferta ----------
+   * Quem clica no Básico vê primeiro o Premium pela metade. Fechar no X, no
+   * Escape ou clicando no fundo só fecha: quem não escolheu nada não vai
+   * parar num checkout que não pediu. */
+  const oferta = document.getElementById('oferta-modal');
+
+  function abrirOferta() {
+    oferta.classList.remove('hidden');
+    oferta.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('oferta-aceitar').focus();
+    icones();
+    rastrear('ViewContent', {
+      content_name: 'Oferta Premium pela metade',
+      content_ids: ['premium-oferta'],
+      content_type: 'product',
+      value: PLANOS['premium-oferta'].centavos / 100,
+      currency: 'BRL'
+    });
+  }
+
+  function fecharOferta() {
+    oferta.classList.add('hidden');
+    oferta.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('oferta-aceitar').addEventListener('click', () => {
+    fecharOferta();
+    abrir('premium-oferta');
+  });
+  document.getElementById('oferta-recusar').addEventListener('click', () => {
+    fecharOferta();
+    abrir('basico');
+  });
+  document.getElementById('oferta-fechar').addEventListener('click', fecharOferta);
+  oferta.addEventListener('click', e => { if (e.target === oferta) fecharOferta(); });
+
   document.querySelectorAll('.btn-checkout').forEach(b => {
-    b.addEventListener('click', () => abrir(b.dataset.plano));
+    b.addEventListener('click', () => {
+      if (b.dataset.plano === 'basico') return abrirOferta();
+      abrir(b.dataset.plano);
+    });
   });
   document.getElementById('checkout-fechar').addEventListener('click', fechar);
   modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !modal.classList.contains('hidden')) fechar();
+    if (e.key !== 'Escape') return;
+    if (!oferta.classList.contains('hidden')) return fecharOferta();
+    if (!modal.classList.contains('hidden')) fechar();
   });
 
   /* ---------- erros ---------- */
